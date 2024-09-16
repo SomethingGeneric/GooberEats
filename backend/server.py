@@ -23,7 +23,7 @@ def set_glob_kcount(id, value):
 @app.route('/kcount', methods=['GET', 'POST'])
 def deal():
     if request.method == 'GET':
-        id = request.get_json()['id']
+        id = request.args.get('id')
         return str(get_glob_kcount(id))
     elif request.method == 'POST':
         data = request.get_json()

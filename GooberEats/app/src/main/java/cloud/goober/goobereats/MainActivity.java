@@ -1,5 +1,7 @@
 package cloud.goober.goobereats;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
@@ -22,11 +24,16 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 public class MainActivity extends AppCompatActivity {
 
     private TextView calSpentView;
     private EditText submitNewCal;
+
+    private static final SecureRandom secureRandom = new SecureRandom();
+    private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder().withoutPadding();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +66,27 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public static String generateUserID() {
+        byte[] randomBytes = new byte[64];
+        secureRandom.nextBytes(randomBytes);
+        return base64Encoder.encodeToString(randomBytes).substring(0, 64);
+    }
+
+    public String truegetUserID() {
+        SharedPreferences sharedPref = this.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
+        String result = sharedPref.getString("userid", null);
+        if (result == null) {
+            String newID = generateUserID();
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putString("userid", newID);
+            editor.apply();
+            editor.commit();
+            return newID;
+        } else {
+            return result;
+        }
+    }
+
     // AsyncTask to perform network operations on a background thread
     private class FetchDataTask extends AsyncTask<Void, Void, String> {
         private Exception exception;
@@ -68,9 +96,10 @@ public class MainActivity extends AppCompatActivity {
             String storedCalories = null;
             try {
                 // Create the URL and connection
-                URL url = new URL("http://77.90.6.154:5000/kcount");
+                URL url = new URL("http://77.90.6.154:5000/kcount?id=" + getUserID()); // Append userId as query parameter for GET
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
+                connection.setRequestProperty("Content-Type", "application/json");
 
                 // Check if response is HTTP OK (200)
                 int responseCode = connection.getResponseCode();
@@ -107,7 +136,13 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "No data received from server", Toast.LENGTH_SHORT).show();
             }
         }
+
+        // Method to get the userID
+        private String getUserID() {
+            return truegetUserID();
+        }
     }
+
 
     // Method to get user input and make a POST request
     private void submitCalorieData() {
