@@ -24,12 +24,10 @@ jobs:
       run: chmod +x gradlew
     - name: Build APK with Gradle
       run: ./gradlew assembleRelease
-    - name: Eat my ass GitHub
-      run: ls ./app/build/outputs/apk/release/
     - name: Upload APK as artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-release.apk
         if-no-files-found: error
         overwrite: true
-        path: ./app/build/outputs/apk/release/app-release-unsigned.apk
+        path: ./GooberEats/app/build/outputs/apk/release/app-release-unsigned.apk
