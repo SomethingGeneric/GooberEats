@@ -30,6 +30,9 @@ def deal():
         if 'id' in data and 'kcal' in data and isinstance(data['kcal'], int):
             id = data['id']
             increment = data['kcal']
+            print("Incrementing", id, "by", increment)
+            print("Current value:", get_glob_kcount(id))
+            print("New value:", get_glob_kcount(id) + increment)
             glob_kcount = get_glob_kcount(id)
             glob_kcount += increment
             set_glob_kcount(id, glob_kcount)
