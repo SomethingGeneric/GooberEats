@@ -1,9 +1,10 @@
 name: Android APK Build
 
 on:
+  workflow_dispatch:
   push:
     tags:
-      - 'v*' # Trigger only when a new tag matching the pattern 'v*' is pushed
+      - 'v*
 
 jobs:
   build:
