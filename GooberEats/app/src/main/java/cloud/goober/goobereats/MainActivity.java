@@ -33,7 +33,8 @@ public class MainActivity extends AppCompatActivity {
     private EditText submitNewCal;
 
     private static final SecureRandom secureRandom = new SecureRandom();
-    private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder().withoutPadding();
+    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final int STRING_LENGTH = 64;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,12 +65,31 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        findViewById(R.id.resetButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                emptyUserID();
+                Toast.makeText(MainActivity.this, "UID nuked", Toast.LENGTH_SHORT).show();
+            }
+        });
+
     }
 
     public static String generateUserID() {
-        byte[] randomBytes = new byte[64];
-        secureRandom.nextBytes(randomBytes);
-        return base64Encoder.encodeToString(randomBytes).substring(0, 64);
+        StringBuilder sb = new StringBuilder(STRING_LENGTH);
+        for (int i = 0; i < STRING_LENGTH; i++) {
+            int randomIndex = secureRandom.nextInt(CHARACTERS.length());
+            sb.append(CHARACTERS.charAt(randomIndex));
+        }
+        return sb.toString();
+    }
+
+    public void emptyUserID() {
+        SharedPreferences sharedPref = this.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.remove("userid");
+        editor.apply();
+        editor.commit();
     }
 
     public String truegetUserID() {
@@ -188,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
                 // Create JSON payload
                 JSONObject jsonBody = new JSONObject();
                 jsonBody.put("kcal", newcals);
+                jsonBody.put("id", truegetUserID());
 
                 // Write the JSON data to the request body
                 try (OutputStream os = connection.getOutputStream()) {
@@ -197,6 +218,7 @@ public class MainActivity extends AppCompatActivity {
 
                 // Get response code
                 int responseCode = connection.getResponseCode();
+                connection.disconnect();
                 if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_CREATED) {
                     return "Success!";
                 } else {

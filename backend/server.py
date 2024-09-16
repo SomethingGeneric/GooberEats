@@ -24,21 +24,23 @@ def set_glob_kcount(id, value):
 def deal():
     if request.method == 'GET':
         id = request.args.get('id')
-        return str(get_glob_kcount(id))
+        value = get_glob_kcount(id)
+        print(f"GET request for id={id}: {value}")
+        return str(value)
     elif request.method == 'POST':
         data = request.get_json()
         if 'id' in data and 'kcal' in data and isinstance(data['kcal'], int):
             id = data['id']
             increment = data['kcal']
-            print("Incrementing", id, "by", increment)
-            print("Current value:", get_glob_kcount(id))
-            print("New value:", get_glob_kcount(id) + increment)
-            glob_kcount = get_glob_kcount(id)
-            glob_kcount += increment
-            set_glob_kcount(id, glob_kcount)
-            return str(glob_kcount)
+            current_value = get_glob_kcount(id)
+            new_value = current_value + increment
+            print(f"POST request - Incrementing id={id} by {increment}")
+            print(f"Current value: {current_value}, New value: {new_value}")
+            set_glob_kcount(id, new_value)
+            return str(new_value)
         else:
             return "Invalid request body!"
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
