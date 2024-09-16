@@ -29,4 +29,4 @@ jobs:
         name: app-release.apk
         if-no-files-found: error
         overwrite: true
-        path: ./app/build/outputs/apk/release/*
+        path: ./app/build/outputs/*
