@@ -28,6 +28,11 @@ def deal():
         else:
             return "Invalid request body!"
 
+@app.route("/datafor", methods=['GET'])
+def get_data():
+    id = request.args.get('id')
+    print(f"GET request for all data of id={id}")
+    return str(cd.get_all_kcal(id))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

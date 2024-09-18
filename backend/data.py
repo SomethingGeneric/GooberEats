@@ -1,4 +1,4 @@
-import sqlite3,os
+import sqlite3,os,json
 from datetime import datetime
 
 class caldata:
@@ -36,3 +36,20 @@ class caldata:
         c.execute("INSERT INTO calories VALUES (?, ?, ?, ?)", (id, self.todaystamp, nkcal, desc))
         conn.commit()
         conn.close()
+
+    def get_all_kcal(self, id):
+        self.ensure_prof(id)
+        conn = sqlite3.connect('cal_data/calories.db')
+        c = conn.cursor()
+        c.execute("SELECT * FROM calories WHERE user_id = ?", (id,))
+        result = c.fetchall()
+        conn.close()
+        json_result = []
+        for row in result:
+            json_result.append({
+                'user_id': row[0],
+                'datestamp': row[1],
+                'calorie_count': row[2],
+                'description': row[3]
+            })
+        return json.dumps(json_result)
