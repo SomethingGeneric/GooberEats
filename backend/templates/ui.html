@@ -31,20 +31,24 @@
 
 <script>
 
+function fetchUserData(userId) {
+    fetch(`/api/datafor?id=${encodeURIComponent(userId)}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('userDataResults').style.display = 'block';
+            document.getElementById('userDataContent').textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            console.error('Error fetching user data:', error);
+            document.getElementById('userDataResults').style.display = 'block';
+            document.getElementById('userDataContent').textContent = 'Error fetching user data';
+        });
+}
+
 document.getElementById('userId').addEventListener('input', function(e) {
     var userId = e.target.value.trim();
     if (userId) {
-        fetch(`/api/datafor?id=${encodeURIComponent(userId)}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('userDataResults').style.display = 'block';
-                document.getElementById('userDataContent').textContent = JSON.stringify(data, null, 2);
-            })
-            .catch(error => {
-                console.error('Error fetching user data:', error);
-                document.getElementById('userDataResults').style.display = 'block';
-                document.getElementById('userDataContent').textContent = 'Error fetching user data';
-            });
+        fetchUserData(userId);
     } else {
         document.getElementById('userDataResults').style.display = 'none';
     }
@@ -77,6 +81,7 @@ document.getElementById('calorieForm').addEventListener('submit', function(e) {
             // Clear the form
             document.getElementById('calories').value = '';
             document.getElementById('description').value = '';
+            fetchUserData(userId);
 
         } else {
             alert('Error adding calories. Please try again.');
