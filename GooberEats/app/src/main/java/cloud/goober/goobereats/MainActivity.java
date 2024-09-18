@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -16,6 +17,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -118,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
             String storedCalories = null;
             try {
                 // Create the URL and connection
-                URL url = new URL("http://eats.goober.cloud:5000/api/kcount?id=" + getUserID()); // Append userId as query parameter for GET
+                URL url = new URL("http://eats.goober.cloud:5000/api/datafor?id=" + getUserID()); // Append userId as query parameter for GET
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setRequestProperty("Content-Type", "application/json");
@@ -134,13 +137,42 @@ public class MainActivity extends AppCompatActivity {
                         content.append(inputLine);
                     }
                     in.close();
-                    storedCalories = content.toString();
+
+                    String rawjson = content.toString();
+
+                    // Parse the raw string into a JSONArray
+                    JSONArray dataArray = new JSONArray(rawjson);
+                    StringBuilder outputStr = new StringBuilder();
+
+                    // Iterate over each JSONObject in the array
+                    for (int i = 0; i < dataArray.length(); i++) {
+                        JSONObject item = dataArray.getJSONObject(i);
+
+                        // Retrieve each field
+                        String datestamp = item.getString("datestamp");
+                        int calorieCount = item.getInt("calorie_count");
+                        String description = item.getString("description");
+
+                        // Concatenate the fields to the output string
+                        outputStr.append(datestamp)
+                                .append(", ")
+                                .append(calorieCount)
+                                .append(", ")
+                                .append(description)
+                                .append("\n");
+                    }
+
+                    // Output the result
+                    storedCalories = outputStr.toString();
+
                 } else {
                     // Handle non-200 HTTP response codes
                     throw new IOException("HTTP Error: " + responseCode);
                 }
             } catch (IOException e) {
                 exception = e; // Capture the exception to handle it later
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
             }
             return storedCalories;
         }
@@ -152,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Error: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
             } else if (result != null) {
                 // If successful, update the TextView with the fetched data
-                calSpentView.setText("Today's calories: " + result);
+                calSpentView.setText(result);
             } else {
                 // Handle case where result is null (no data received)
                 Toast.makeText(MainActivity.this, "No data received from server", Toast.LENGTH_SHORT).show();
@@ -242,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String result) {
             if (exception != null) {
                 Toast.makeText(MainActivity.this, "Error: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
-                // Log.e("PostCalorieTask", "Error occurred", exception);
+                Log.e("PostCalorieTask", "GE Error occurred", exception);
             } else if (result != null) {
                 // Show success message
                 Toast.makeText(MainActivity.this, result, Toast.LENGTH_SHORT).show();
