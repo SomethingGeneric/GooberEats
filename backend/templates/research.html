@@ -1,0 +1,13 @@
+<form id="researchForm">
+    <textarea id="promptInput" rows="4" cols="50" placeholder="Enter your research prompt here..."></textarea>
+    <br>
+    <button type="submit">Submit</button>
+</form>
+
+<script>
+document.getElementById('researchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var prompt = document.getElementById('promptInput').value;
+    window.location.href = '/research_results?prompt=' + encodeURIComponent(prompt);
+});
+</script>

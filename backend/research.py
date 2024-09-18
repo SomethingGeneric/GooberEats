@@ -36,3 +36,10 @@ class Research:
 
         except Exception as e:
             return f"An error occurred: {str(e)}"
+
+     
+
+    def combo_query(self, prompt):
+        gpt_response = self.query_gpt(prompt)
+        claude_response = self.query_claude(prompt)
+        return gpt_response, claude_response

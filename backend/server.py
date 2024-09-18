@@ -1,11 +1,19 @@
-from flask import Flask, request, render_template
-
+# stdlib
 import os
 
+# pip
+from flask import Flask, request, render_template
+import toml
+
+# local
 from data import caldata
+from research import Research
+
+config = toml.load('config.toml')
 
 app = Flask(__name__)
 cd = caldata()
+research = Research(config['openai']['api_key'], config['anthropic']['api_key'])
 
 @app.route('/api/kcount', methods=['GET', 'POST'])
 def deal():
@@ -55,6 +63,17 @@ def get_data():
 @app.route('/')
 def home():
     return render_template('page.html', content="<h1>GooberEats</h1><h2>Actual website coming soon!</h2>")
+
+
+@app.route('/research')
+def research():
+    return render_template('page.html', content=render_template('research.html'))
+
+@app.route('/research_results')
+def research_results():
+    prompt = request.args.get('prompt')
+    gpt_response, claude_response = research.combo_query(prompt)
+    return render_template('page.html', content=f"<h4>GPT:</h4><pre>{gpt_response}<pre><br/><hr><br/><h4>Claude:</h4><pre>{claude_response}</pre>")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
