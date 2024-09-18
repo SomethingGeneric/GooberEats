@@ -46,6 +46,14 @@ function fetchUserData(userId) {
                     <td>${entry.calorie_count}</td>
                 </tr>`;
             });
+            // Calculate total calories
+            let totalCalories = data.reduce((sum, entry) => sum + entry.calorie_count, 0);
+            
+            // Add a summary row
+            tableHTML += `<tr class="mdl-color--accent">
+                <td class="mdl-data-table__cell--non-numeric" colspan="2"><strong>Total Calories</strong></td>
+                <td><strong>${totalCalories}</strong></td>
+            </tr>`;
             tableHTML += '</tbody></table>';
             document.getElementById('userDataContent').innerHTML = tableHTML;
             componentHandler.upgradeElement(document.getElementById('userDataContent').querySelector('table'));
