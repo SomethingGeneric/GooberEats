@@ -30,7 +30,7 @@ class Research:
                     {"role": "user", "content": prompt}
                 ]
             )
-            return message.count
+            return message.content
 
         except Exception as e:
             return f"An error occurred: {str(e)}"
