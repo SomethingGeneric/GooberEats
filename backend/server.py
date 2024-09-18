@@ -73,7 +73,7 @@ def research_endp():
 def research_results():
     prompt = request.args.get('prompt')
     gpt_response, claude_response = research.combo_query(prompt)
-    return render_template('page.html', content=f"<h4>GPT:</h4><pre>{gpt_response}<pre><br/><hr><br/><h4>Claude:</h4><pre>{claude_response}</pre>")
+    return render_template('page.html', content=f"<h4>GPT:</h4><textarea>{gpt_response}</textarea><br/><hr><br/><h4>Claude:</h4><textarea>{claude_response}</textarea>")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
