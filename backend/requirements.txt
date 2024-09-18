@@ -1,2 +1,4 @@
 flask
 requests # for testing
+anthropic
+openai

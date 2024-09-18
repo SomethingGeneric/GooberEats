@@ -53,3 +53,8 @@ class caldata:
                 'description': row[3]
             })
         return json.dumps(json_result)
+    
+    def estimate_calories_for(self, item_desc):
+        # TODO: Implement web search or generative AI integration
+        # For now, return a placeholder value
+        return 100  # Placeholder: assumes 100 calories for any item

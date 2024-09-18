@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, render_template
 
 import os
 
@@ -54,7 +54,7 @@ def get_data():
 
 @app.route('/')
 def home():
-    return "GooberEats<br/>Actual website coming soon!"
+    return render_template('page.html', content="<h1>GooberEats</h1><h2>Actual website coming soon!</h2>")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
