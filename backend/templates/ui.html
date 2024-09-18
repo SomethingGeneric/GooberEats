@@ -1,0 +1,90 @@
+<div id="userDataResults" class="mdl-cell mdl-cell--12-col" style="display: none;">
+    <h4>User Data:</h4>
+    <pre id="userDataContent"></pre>
+</div>
+
+<form id="calorieForm" class="mdl-grid">
+    <div class="mdl-cell mdl-cell--12-col">
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" id="userId" required>
+            <label class="mdl-textfield__label" for="userId">User ID</label>
+        </div>
+    </div>
+    <div class="mdl-cell mdl-cell--12-col">
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="number" id="calories" required>
+            <label class="mdl-textfield__label" for="calories">Number of Calories</label>
+        </div>
+    </div>
+    <div class="mdl-cell mdl-cell--12-col">
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" id="description" required>
+            <label class="mdl-textfield__label" for="description">Description of Food</label>
+        </div>
+    </div>
+    <div class="mdl-cell mdl-cell--12-col">
+        <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" type="submit">
+            Submit
+        </button>
+    </div>
+</form>
+
+<script>
+
+document.getElementById('userId').addEventListener('input', function(e) {
+    var userId = e.target.value.trim();
+    if (userId) {
+        fetch(`/api/datafor?id=${encodeURIComponent(userId)}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('userDataResults').style.display = 'block';
+                document.getElementById('userDataContent').textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('Error fetching user data:', error);
+                document.getElementById('userDataResults').style.display = 'block';
+                document.getElementById('userDataContent').textContent = 'Error fetching user data';
+            });
+    } else {
+        document.getElementById('userDataResults').style.display = 'none';
+    }
+});
+
+document.getElementById('calorieForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var userId = document.getElementById('userId').value;
+    var calories = document.getElementById('calories').value;
+    var description = document.getElementById('description').value;
+    
+    // Here you can add code to send this data to your server
+    console.log('User ID:', userId, 'Calories:', calories, 'Description:', description);
+    fetch('/api/kcount', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            id: userId,
+            kcal: parseInt(calories),
+            desc: description
+        })
+    })
+    .then(response => response.text())
+    .then(result => {
+        console.log('Server response:', result);
+        if (result === 'Success') {
+            alert('Calories added successfully!');
+            // Clear the form
+            document.getElementById('calories').value = '';
+            document.getElementById('description').value = '';
+
+        } else {
+            alert('Error adding calories. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+});
+</script>

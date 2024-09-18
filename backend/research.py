@@ -1,6 +1,7 @@
 from openai import OpenAI
 import anthropic
 
+
 class Research:
     def __init__(self, oapi_key, anth_api_key):
         self.openai_api_key = oapi_key
@@ -9,11 +10,13 @@ class Research:
     def query_gpt(self, prompt):
         try:
             client = OpenAI(api_key=self.openai_api_key)
-            response = client.chat.completions.create(model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ])
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": prompt},
+                ],
+            )
             return response.choices[0].message.content.strip()
         except Exception as e:
             return f"An error occurred: {str(e)}"
@@ -26,16 +29,12 @@ class Research:
             message = client.messages.create(
                 model="claude-3-5-sonnet-20240620",
                 max_tokens=1024,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
+                messages=[{"role": "user", "content": prompt}],
             )
             return message.content[0].text
 
         except Exception as e:
             return f"An error occurred: {str(e)}"
-
-
 
     def combo_query(self, prompt):
         gpt_response = self.query_gpt(prompt)
