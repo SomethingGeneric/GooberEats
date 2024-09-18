@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
             String storedCalories = null;
             try {
                 // Create the URL and connection
-                URL url = new URL("http://77.90.6.154:5000/kcount?id=" + getUserID()); // Append userId as query parameter for GET
+                URL url = new URL("http://eats.goober.cloud:5000/api/kcount?id=" + getUserID()); // Append userId as query parameter for GET
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setRequestProperty("Content-Type", "application/json");
@@ -196,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(Void... voids) {
             try {
                 // Create the URL and connection
-                URL url = new URL("http://77.90.6.154:5000/kcount");
+                URL url = new URL("http://eats.goober.cloud:5000/api/kcount");
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("Content-Type", "application/json; utf-8");

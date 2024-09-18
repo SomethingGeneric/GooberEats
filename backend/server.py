@@ -7,8 +7,18 @@ from data import caldata
 app = Flask(__name__)
 cd = caldata()
 
-@app.route('/kcount', methods=['GET', 'POST'])
+@app.route('/api/kcount', methods=['GET', 'POST'])
 def deal():
+    """
+    Handle GET and POST requests for '/api/kcount' endpoint.
+
+    For GET requests, retrieves the current kcount value for a given 'id' parameter.
+    For POST requests, adds calories to the current kcount for a given 'id' parameter.
+
+    Returns:
+        - For GET requests: The current global kcount value as a string. (clients deal with typecasting as needed)
+        - For POST requests: "Success" if the calories were added successfully, or "Invalid request body!" if the request body is invalid.
+    """
     if request.method == 'GET':
         id = request.args.get('id')
         value = cd.get_current_glob_kcount(id)
@@ -28,11 +38,23 @@ def deal():
         else:
             return "Invalid request body!"
 
-@app.route("/datafor", methods=['GET'])
+@app.route("/api/datafor", methods=['GET'])
 def get_data():
+    """
+    Get all entries for a given id.
+
+    Returns:
+        str: The result of calling `cd.get_all_kcal(id)`, which is JSON.
+    """
     id = request.args.get('id')
     print(f"GET request for all data of id={id}")
     return str(cd.get_all_kcal(id))
+
+# END OF API ENDPOINTS
+
+@app.route('/')
+def home():
+    return "GooberEats<br/>Actual website coming soon!"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
