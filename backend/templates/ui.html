@@ -36,7 +36,19 @@ function fetchUserData(userId) {
         .then(response => response.json())
         .then(data => {
             document.getElementById('userDataResults').style.display = 'block';
-            document.getElementById('userDataContent').textContent = JSON.stringify(data, null, 2);
+            let tableHTML = '<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">';
+            tableHTML += '<thead><tr><th class="mdl-data-table__cell--non-numeric">Date</th><th class="mdl-data-table__cell--non-numeric">Description</th><th>Calories</th></tr></thead>';
+            tableHTML += '<tbody>';
+            data.forEach(entry => {
+                tableHTML += `<tr>
+                    <td class="mdl-data-table__cell--non-numeric">${entry.datestamp}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${entry.description}</td>
+                    <td>${entry.calorie_count}</td>
+                </tr>`;
+            });
+            tableHTML += '</tbody></table>';
+            document.getElementById('userDataContent').innerHTML = tableHTML;
+            componentHandler.upgradeElement(document.getElementById('userDataContent').querySelector('table'));
         })
         .catch(error => {
             console.error('Error fetching user data:', error);
