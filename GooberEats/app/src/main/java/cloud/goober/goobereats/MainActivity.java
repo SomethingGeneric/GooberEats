@@ -31,9 +31,10 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView calSpentView;
     private EditText submitNewCal;
+    private EditText submitItemDesc;
 
     private static final SecureRandom secureRandom = new SecureRandom();
-    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
     private static final int STRING_LENGTH = 64;
 
     @Override
@@ -56,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
         new FetchDataTask().execute(); // TODO: annotated as deprecated?
 
         submitNewCal = findViewById(R.id.submitNewCal);
+        submitItemDesc = findViewById(R.id.newItemDesc);
 
         findViewById(R.id.submitCalButton).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -167,11 +169,13 @@ public class MainActivity extends AppCompatActivity {
     // Method to get user input and make a POST request
     private void submitCalorieData() {
         String userInput = submitNewCal.getText().toString().trim();
+        String itemDesc = submitItemDesc.getText().toString().trim();
 
         if (!userInput.isEmpty()) {
             // Call AsyncTask to perform the POST request
-            new PostCalorieTask(userInput).execute();
+            new PostCalorieTask(userInput, itemDesc).execute();
             submitNewCal.setText("");
+            submitItemDesc.setText("");
         } else {
             Toast.makeText(MainActivity.this, "Input cannot be empty", Toast.LENGTH_SHORT).show();
         }
@@ -180,10 +184,12 @@ public class MainActivity extends AppCompatActivity {
     // AsyncTask to perform POST request in the background
     private class PostCalorieTask extends AsyncTask<Void, Void, String> {
         private String userInput;
+        private String itemDesc;
         private Exception exception;
 
-        public PostCalorieTask(String userInput) {
+        public PostCalorieTask(String userInput, String itemDesc) {
             this.userInput = userInput;
+            this.itemDesc = itemDesc;
         }
 
         @Override
@@ -209,6 +215,7 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject jsonBody = new JSONObject();
                 jsonBody.put("kcal", newcals);
                 jsonBody.put("id", truegetUserID());
+                jsonBody.put("desc", itemDesc);
 
                 // Write the JSON data to the request body
                 try (OutputStream os = connection.getOutputStream()) {
