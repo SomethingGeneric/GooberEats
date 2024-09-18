@@ -2,42 +2,29 @@ from flask import Flask, request
 
 import os
 
+from data import caldata
+
 app = Flask(__name__)
-
-if not os.path.exists('cal_data'):
-    os.makedirs('cal_data')
-
-def get_glob_kcount(id):
-    try:
-        with open(f'cal_data/{id}.txt', 'r') as file:
-            return int(file.read())
-    except FileNotFoundError:
-        with open(f'cal_data/{id}.txt', 'w') as file:
-            file.write('0')
-        return 0
-
-def set_glob_kcount(id, value):
-    with open(f'cal_data/{id}.txt', 'w') as file:
-        file.write(str(value))
+cd = caldata()
 
 @app.route('/kcount', methods=['GET', 'POST'])
 def deal():
     if request.method == 'GET':
         id = request.args.get('id')
-        value = get_glob_kcount(id)
+        value = cd.get_current_glob_kcount(id)
         print(f"GET request for id={id}: {value}")
         return str(value)
     elif request.method == 'POST':
         data = request.get_json()
         if 'id' in data and 'kcal' in data and isinstance(data['kcal'], int):
             id = data['id']
-            increment = data['kcal']
-            current_value = get_glob_kcount(id)
-            new_value = current_value + increment
-            print(f"POST request - Incrementing id={id} by {increment}")
-            print(f"Current value: {current_value}, New value: {new_value}")
-            set_glob_kcount(id, new_value)
-            return str(new_value)
+            newcal = data['kcal']
+            desc = "Not logged"
+            if 'desc' in data:
+                desc = data['desc']
+            print(f"POST request - Adding calories id={id} by {newcal}")
+            cd.add_current_glob_kcount(id, newcal, desc)
+            return "Success"
         else:
             return "Invalid request body!"
 

@@ -1,7 +1,7 @@
 import requests
 
 # Make a POST request with JSON data
-url = "http://77.90.6.154:5000/kcount"
+url = "http://127.0.0.1:5000/kcount"
 uid = "dBwuayheC06sO6IDnPfepDKJjHdPi4atm6oiVpOZFu44muXiVNnjLTaAcGI3UKmz"
 data = {"id": uid, "kcal": 10}
 response = requests.post(url, json=data)
