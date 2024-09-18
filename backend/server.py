@@ -66,7 +66,7 @@ def home():
 
 
 @app.route('/research')
-def research():
+def research_endp():
     return render_template('page.html', content=render_template('research.html'))
 
 @app.route('/research_results')
