@@ -20,7 +20,7 @@ class caldata:
         if not os.path.exists(f'cal_data/{id}'):
             os.makedirs(f'cal_data/{id}')
 
-    def get_current_glob_kcount(self, id):
+    def get_current_kcount(self, id):
         self.ensure_prof(id)
         conn = sqlite3.connect('cal_data/calories.db')
         c = conn.cursor()
@@ -29,7 +29,7 @@ class caldata:
         conn.close()
         return result[0] if result[0] else 0
 
-    def add_current_glob_kcount(self, id, nkcal, desc="Not logged"):
+    def add_current_kcount(self, id, nkcal, desc="Not logged"):
         self.ensure_prof(id)
         conn = sqlite3.connect('cal_data/calories.db')
         c = conn.cursor()
