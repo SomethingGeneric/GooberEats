@@ -65,7 +65,87 @@ class caldata:
             )
         return json.dumps(json_result)
 
-    def estimate_calories_for(self, item_desc):
-        # TODO: Implement web search or generative AI integration
-        # For now, return a placeholder value
-        return 100  # Placeholder: assumes 100 calories for any item
+    def estimate_calories_for(self, item_desc, research_client=None):
+        """
+        Estimate calories for a food item using AI.
+        
+        Args:
+            item_desc (str): Description of the food item
+            research_client: Optional Research client for AI queries
+            
+        Returns:
+            int: Estimated calories for the item
+        """
+        if not research_client:
+            # Fallback to reasonable defaults if no AI client available
+            return self._get_fallback_calories(item_desc)
+        
+        # Create a detailed prompt for calorie estimation
+        prompt = f"""
+        Please estimate the calories for the following food item: "{item_desc}"
+        
+        Consider:
+        - Common serving sizes for this type of food
+        - Typical preparation methods
+        - Average nutritional content
+        
+        Respond with ONLY a number representing the estimated calories for a typical serving.
+        If the description is unclear or you're unsure, provide your best reasonable estimate.
+        
+        Examples:
+        - "apple" → 80
+        - "slice of pizza" → 285
+        - "cup of rice" → 205
+        - "banana" → 105
+        """
+        
+        try:
+            # Try to get estimate from AI
+            response = research_client.query_gpt(prompt)
+            
+            # Extract numeric value from response
+            import re
+            numbers = re.findall(r'\d+', response)
+            if numbers:
+                estimated_calories = int(numbers[0])
+                # Sanity check: ensure reasonable range (10-2000 calories)
+                if 10 <= estimated_calories <= 2000:
+                    return estimated_calories
+            
+            # If AI response is invalid, fall back to heuristic
+            return self._get_fallback_calories(item_desc)
+            
+        except Exception as e:
+            print(f"Error estimating calories with AI: {e}")
+            # Fall back to heuristic estimation
+            return self._get_fallback_calories(item_desc)
+    
+    def _get_fallback_calories(self, item_desc):
+        """
+        Provide fallback calorie estimates based on common food categories.
+        
+        Args:
+            item_desc (str): Description of the food item
+            
+        Returns:
+            int: Estimated calories
+        """
+        item_lower = item_desc.lower()
+        
+        # Simple heuristic based on food categories
+        if any(word in item_lower for word in ['apple', 'orange', 'banana', 'fruit']):
+            return 80
+        elif any(word in item_lower for word in ['salad', 'lettuce', 'spinach', 'greens']):
+            return 50
+        elif any(word in item_lower for word in ['pizza', 'burger', 'fries']):
+            return 350
+        elif any(word in item_lower for word in ['rice', 'pasta', 'bread']):
+            return 200
+        elif any(word in item_lower for word in ['chicken', 'beef', 'meat']):
+            return 250
+        elif any(word in item_lower for word in ['donut', 'cake', 'cookie', 'dessert']):
+            return 300
+        elif any(word in item_lower for word in ['soda', 'juice', 'drink']):
+            return 150
+        else:
+            return 150  # Default estimate for unknown items

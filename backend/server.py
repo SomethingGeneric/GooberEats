@@ -48,6 +48,41 @@ def deal():
             return "Invalid request body!"
 
 
+@app.route("/api/estimate", methods=["POST"])
+def estimate_calories():
+    """
+    Estimate calories for a food item using AI.
+    
+    Expects JSON payload:
+    {
+        "description": "food item description"
+    }
+    
+    Returns:
+    {
+        "description": "food item description",
+        "estimated_calories": 150
+    }
+    """
+    data = request.get_json()
+    if not data or "description" not in data:
+        return {"error": "Missing 'description' field in request body"}, 400
+    
+    description = data["description"].strip()
+    if not description:
+        return {"error": "Description cannot be empty"}, 400
+    
+    try:
+        estimated_calories = cd.estimate_calories_for(description, research)
+        return {
+            "description": description,
+            "estimated_calories": estimated_calories
+        }
+    except Exception as e:
+        print(f"Error estimating calories: {e}")
+        return {"error": "Failed to estimate calories"}, 500
+
+
 @app.route("/api/datafor", methods=["GET"])
 def get_data():
     """
