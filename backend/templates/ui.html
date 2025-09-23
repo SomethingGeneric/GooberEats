@@ -21,6 +21,12 @@
             <input class="mdl-textfield__input" type="text" id="description" required>
             <label class="mdl-textfield__label" for="description">Description of Food</label>
         </div>
+        <button class="mdl-button mdl-js-button mdl-button--accent" type="button" id="estimateBtn">
+            🤖 Estimate Calories
+        </button>
+        <div id="estimationResult" style="margin-top: 10px; display: none;">
+            <p><strong>AI Estimate:</strong> <span id="estimatedCalories"></span> calories</p>
+        </div>
     </div>
     <div class="mdl-cell mdl-cell--12-col">
         <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" type="submit">
@@ -72,6 +78,59 @@ document.getElementById('userId').addEventListener('input', function(e) {
     } else {
         document.getElementById('userDataResults').style.display = 'none';
     }
+});
+
+document.getElementById('estimateBtn').addEventListener('click', function() {
+    var description = document.getElementById('description').value.trim();
+    
+    if (!description) {
+        alert('Please enter a food description first');
+        return;
+    }
+    
+    // Show loading state
+    var btn = document.getElementById('estimateBtn');
+    var originalText = btn.textContent;
+    btn.textContent = '🔄 Estimating...';
+    btn.disabled = true;
+    
+    // Hide previous results
+    document.getElementById('estimationResult').style.display = 'none';
+    
+    fetch('/api/estimate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            description: description
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.estimated_calories) {
+            document.getElementById('estimatedCalories').textContent = result.estimated_calories;
+            document.getElementById('estimationResult').style.display = 'block';
+            
+            // Auto-fill calories field if empty
+            var caloriesField = document.getElementById('calories');
+            if (!caloriesField.value) {
+                caloriesField.value = result.estimated_calories;
+                caloriesField.parentElement.classList.add('is-dirty');
+            }
+        } else {
+            alert('Error: ' + (result.error || 'Failed to estimate calories'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while estimating calories. Please try again.');
+    })
+    .finally(() => {
+        // Restore button state
+        btn.textContent = originalText;
+        btn.disabled = false;
+    });
 });
 
 document.getElementById('calorieForm').addEventListener('submit', function(e) {
