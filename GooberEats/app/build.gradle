@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace 'cloud.goober.goobereats'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "cloud.goober.goobereats"
