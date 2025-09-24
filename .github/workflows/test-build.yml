@@ -22,3 +22,12 @@ jobs:
       run: chmod +x gradlew
     - name: Build with Gradle
       run: ./gradlew build
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
+    - name: Upload Debug APK as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug.apk
+        if-no-files-found: error
+        overwrite: true
+        path: ./GooberEats/app/build/outputs/apk/debug/app-debug.apk
