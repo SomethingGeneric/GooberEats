@@ -25,7 +25,7 @@ jobs:
     - name: Build APK with Gradle
       run: ./gradlew assembleRelease
     - name: Upload APK as artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: app-release.apk
         if-no-files-found: error
