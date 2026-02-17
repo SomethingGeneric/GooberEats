@@ -68,5 +68,5 @@ jobs:
           push: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=verygeneric/goobereats:buildcache
-          cache-to: type=registry,ref=verygeneric/goobereats:buildcache,mode=max
+          cache-from: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && 'type=registry,ref=verygeneric/goobereats:buildcache' || 'type=gha' }}
+          cache-to: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && 'type=registry,ref=verygeneric/goobereats:buildcache,mode=max' || 'type=gha,mode=max' }}

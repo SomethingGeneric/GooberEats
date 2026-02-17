@@ -96,7 +96,9 @@ The workflow:
   - Push to `main` branch, OR
   - Manually triggered via `workflow_dispatch`
 - **Pull requests**: Build only (no push) to verify Docker build succeeds
-- Uses layer caching to speed up builds
+- **Caching strategy**:
+  - Main branch pushes and manual triggers: Uses DockerHub registry cache for faster builds
+  - Pull requests: Uses GitHub Actions cache (no DockerHub authentication required)
 - Only runs when backend code changes
 
 The date-based tagging ensures:
