@@ -1,0 +1,72 @@
+name: Build and Push Backend Docker Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Generate date-based tag
+        id: date-tag
+        run: |
+          # Generate YYYY.MM.DD format
+          DATE_TAG=$(date -u +"%Y.%m.%d")
+          
+          # For the run number (R), use GitHub's run_number which increments per workflow
+          RUN_NUM="${{ github.run_number }}"
+          
+          # Combine into YYYY.MM.DD.R format
+          FULL_TAG="${DATE_TAG}.${RUN_NUM}"
+          
+          echo "tag=${FULL_TAG}" >> $GITHUB_OUTPUT
+          echo "Generated tag: ${FULL_TAG}"
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: verygeneric/goobereats
+          tags: |
+            type=raw,value=${{ steps.date-tag.outputs.tag }}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=pr,prefix=pr-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && 'type=registry,ref=verygeneric/goobereats:buildcache' || 'type=gha' }}
+          cache-to: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && 'type=registry,ref=verygeneric/goobereats:buildcache,mode=max' || 'type=gha,mode=max' }}
