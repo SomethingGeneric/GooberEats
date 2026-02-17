@@ -1,3 +1,5 @@
+import os
+
 import anthropic
 from openai import OpenAI
 
@@ -8,8 +10,13 @@ class ProviderNotConfiguredError(RuntimeError):
 
 class Research:
     def __init__(self, config):
-        self.openai_api_key = (config.get("openai") or {}).get("api_key")
-        self.anthropic_api_key = (config.get("anthropic") or {}).get("api_key")
+        self.openai_api_key = (config.get("openai") or {}).get("api_key") or os.getenv(
+            "OPENAI_API_KEY"
+        )
+        self.anthropic_api_key = (
+            (config.get("anthropic") or {}).get("api_key")
+            or os.getenv("ANTHROPIC_API_KEY")
+        )
         self._openai_client = None
         self._anthropic_client = None
 
@@ -39,7 +46,7 @@ class Research:
     def query_gpt(self, prompt):
         client = self._get_openai_client()
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": prompt},
