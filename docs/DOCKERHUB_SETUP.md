@@ -42,6 +42,12 @@ The workflow will automatically trigger when:
 - A pull request is opened targeting `main` with backend changes
 - Manually triggered via the "Actions" tab
 
+**Note**: The workflow will **only push to DockerHub** when:
+- Triggered by push to `main` branch, OR
+- Manually triggered via `workflow_dispatch`
+
+Pull requests will **only build** the Docker image to verify it builds successfully, but will **not push** to DockerHub.
+
 To manually test:
 1. Go to the **Actions** tab in your GitHub repository
 2. Select **Build and Push Backend Docker Image** workflow
@@ -81,12 +87,15 @@ services:
 ## Workflow Details
 
 The workflow:
-- Builds the Docker image from the `backend/` directory
+- Builds the Docker image from the `backend/` directory for all triggers
 - Tags images with date-based versioning: `YYYY.MM.DD.R`
   - Example: `2026.02.17.42` (where 42 is the workflow run number)
   - `latest` tag (only for main branch pushes)
   - `pr-XX` tag (only for pull requests)
-- Pushes to DockerHub (only on push to main, not on PRs)
+- **Pushes to DockerHub only when**:
+  - Push to `main` branch, OR
+  - Manually triggered via `workflow_dispatch`
+- **Pull requests**: Build only (no push) to verify Docker build succeeds
 - Uses layer caching to speed up builds
 - Only runs when backend code changes
 
