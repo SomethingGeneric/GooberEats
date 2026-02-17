@@ -16,7 +16,7 @@ This document explains how to set up the GitHub Actions workflow to automaticall
 3. Select **Account Settings** → **Security**
 4. Click **New Access Token**
 5. Give it a description (e.g., "GooberEats GitHub Actions")
-6. Set access permissions to **Read, Write, Delete**
+6. Set access permissions to **Read & Write** (Delete is not required for pushing images and should be avoided for least-privilege access)
 7. Click **Generate**
 8. **Copy the token** - you won't be able to see it again!
 
