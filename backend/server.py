@@ -15,6 +15,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+logger = logging.getLogger(__name__)
 
 config = toml.load("config.toml")
 
@@ -38,7 +39,7 @@ def deal():
     if request.method == "GET":
         id = request.args.get("id")
         value = cd.get_current_kcount(id)
-        print(f"GET request for id={id}: {value}")
+        logger.info(f"GET request for id={id}: {value}")
         return str(value)
     elif request.method == "POST":
         data = request.get_json()
@@ -48,7 +49,7 @@ def deal():
             desc = "Not logged"
             if "desc" in data:
                 desc = data["desc"]
-            print(f"POST request - Adding calories id={id} by {newcal}")
+            logger.info(f"POST request - Adding calories id={id} by {newcal}")
             cd.add_current_kcount(id, newcal, desc)
             return "Success"
         else:
@@ -86,7 +87,7 @@ def estimate_calories():
             "estimated_calories": estimated_calories
         }
     except Exception as e:
-        print(f"Error estimating calories: {e}")
+        logger.error(f"Error estimating calories: {e}")
         return {"error": "Failed to estimate calories"}, 500
 
 
@@ -99,7 +100,7 @@ def get_data():
         str: The result of calling `cd.get_all_kcal(id)`, which is JSON.
     """
     id = request.args.get("id")
-    print(f"GET request for all data of id={id}")
+    logger.info(f"GET request for all data of id={id}")
     return str(cd.get_all_kcal(id))
 
 
