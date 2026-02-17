@@ -1,0 +1,41 @@
+# syntax=docker/dockerfile:1.7
+
+FROM eclipse-temurin:17-jdk-jammy AS android-builder
+
+ARG CMDLINE_TOOLS_VERSION=11076708
+ARG ANDROID_PLATFORM=android-36
+ARG ANDROID_BUILD_TOOLS=36.0.0
+
+ENV ANDROID_HOME=/opt/android-sdk \
+    ANDROID_SDK_ROOT=/opt/android-sdk \
+    PATH=/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:/opt/android-sdk/emulator:/opt/android-sdk/tools/bin:$PATH \
+    GRADLE_USER_HOME=/workspace/.gradle
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    unzip wget ca-certificates git && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p "${ANDROID_SDK_ROOT}/cmdline-tools" \
+    && cd /tmp \
+    && wget -q "https://dl.google.com/android/repository/commandlinetools-linux-${CMDLINE_TOOLS_VERSION}_latest.zip" -O cmdline-tools.zip \
+    && unzip -q cmdline-tools.zip -d "${ANDROID_SDK_ROOT}/cmdline-tools" \
+    && rm cmdline-tools.zip \
+    && mv "${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools" "${ANDROID_SDK_ROOT}/cmdline-tools/latest"
+
+RUN yes | sdkmanager --licenses >/dev/null
+
+RUN sdkmanager --install \
+    "platform-tools" \
+    "platforms;${ANDROID_PLATFORM}" \
+    "build-tools;${ANDROID_BUILD_TOOLS}" || true
+
+WORKDIR /workspace
+COPY GooberEats /workspace/GooberEats
+WORKDIR /workspace/GooberEats
+
+RUN chmod +x gradlew
+
+RUN ./gradlew --no-daemon assembleDebug
+
+FROM scratch AS artifact
+COPY --from=android-builder /workspace/GooberEats/app/build/outputs/apk/debug/app-debug.apk /GooberEats-debug.apk

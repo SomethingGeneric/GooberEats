@@ -24,6 +24,3 @@ config.toml
 .gitignore
 *.md
 test*.py
-deploy.sh
-run.sh
-goobereats.service

@@ -5,77 +5,99 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="16dp"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/submitCalButton"
+    <TextView
+        android:id="@+id/userIdLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="155dp"
-        android:layout_marginTop="92dp"
-        android:layout_marginEnd="165dp"
-        android:text="Yummy"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        android:text="User ID"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/submitNewCal" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
-        android:id="@+id/submitNewCal"
-        android:layout_width="233dp"
-        android:layout_height="65dp"
-        android:layout_marginStart="100dp"
-        android:layout_marginTop="23dp"
-        android:layout_marginEnd="101dp"
-        android:ems="10"
-        android:hint="calories eaten"
-        android:inputType="text"
+        android:id="@+id/userIdInput"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="user id"
+        android:inputType="textVisiblePassword"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.043"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/calSpentView" />
+        app:layout_constraintTop_toBottomOf="@id/userIdLabel" />
+
+    <Button
+        android:id="@+id/saveUserIdButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Save UID"
+        app:layout_constraintEnd_toStartOf="@id/resetButton"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/userIdInput" />
 
     <Button
         android:id="@+id/resetButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="161dp"
-        android:layout_marginEnd="159dp"
-        android:layout_marginBottom="38dp"
-        android:text="New UID"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:text="Random UID"
+        app:layout_constraintBaseline_toBaselineOf="@id/saveUserIdButton"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toEndOf="@id/saveUserIdButton" />
+
+    <TextView
+        android:id="@+id/calSpentView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:ems="10"
+        android:gravity="start|top"
+        android:minHeight="160dp"
+        android:padding="8dp"
+        android:background="@android:drawable/edit_text"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:inputType="textMultiLine"
+        app:layout_constraintBottom_toTopOf="@id/submitNewCal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/saveUserIdButton" />
+
+    <EditText
+        android:id="@+id/submitNewCal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:ems="10"
+        android:hint="calories eaten"
+        android:inputType="numberDecimal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/calSpentView" />
 
     <EditText
         android:id="@+id/newItemDesc"
-        android:layout_width="234dp"
-        android:layout_height="60dp"
-        android:layout_marginStart="99dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="78dp"
-        android:layout_marginBottom="24dp"
         android:ems="10"
         android:hint="item description"
         android:inputType="text"
-        app:layout_constraintBottom_toTopOf="@+id/submitCalButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/submitNewCal" />
+        app:layout_constraintTop_toBottomOf="@id/submitNewCal" />
 
-    <EditText
-        android:id="@+id/calSpentView"
-        android:layout_width="241dp"
-        android:layout_height="167dp"
-        android:layout_marginStart="95dp"
-        android:layout_marginTop="31dp"
-        android:layout_marginEnd="106dp"
-        android:editable="false"
-        android:ems="10"
-        android:gravity="start|top"
-        android:inputType="textMultiLine"
+    <Button
+        android:id="@+id/submitCalButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Yummy"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.322"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/newItemDesc" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

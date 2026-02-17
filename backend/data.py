@@ -1,7 +1,9 @@
-import sqlite3, os, json
-from datetime import datetime
 import hashlib
 import logging
+import sqlite3, os, json
+from datetime import datetime
+
+from research import ProviderNotConfiguredError
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -74,10 +76,10 @@ class caldata:
     def _get_cache_key(self, item_desc):
         """
         Generate a cache key for a food item description.
-        
+
         Args:
             item_desc (str): Description of the food item
-            
+
         Returns:
             str: Hash of the normalized description
         """
@@ -85,14 +87,14 @@ class caldata:
         normalized = item_desc.strip().lower()
         # MD5 is used only for cache key generation, not security
         return hashlib.md5(normalized.encode(), usedforsecurity=False).hexdigest()
-    
+
     def _get_cached_estimate(self, item_desc):
         """
         Get cached calorie estimate for a food item.
-        
+
         Args:
             item_desc (str): Description of the food item
-            
+
         Returns:
             int or None: Cached calorie estimate if found, None otherwise
         """
@@ -101,32 +103,32 @@ class caldata:
             c = conn.cursor()
             c.execute(
                 "SELECT estimated_calories FROM calorie_cache WHERE description_hash = ?",
-                (cache_key,)
+                (cache_key,),
             )
             result = c.fetchone()
-            
+
             if result:
                 logger.info(f"Cache hit for '{item_desc}': {result[0]} calories")
                 return result[0]
             return None
-    
+
     def _cache_estimate(self, item_desc, calories):
         """
         Cache a calorie estimate for a food item.
-        
+
         Args:
             item_desc (str): Description of the food item
             calories (int): Estimated calories
         """
         cache_key = self._get_cache_key(item_desc)
         timestamp = datetime.now().isoformat()
-        
+
         with sqlite3.connect("cal_data/calories.db") as conn:
             c = conn.cursor()
             # Use INSERT OR REPLACE to update existing cache entries
             c.execute(
                 "INSERT OR REPLACE INTO calorie_cache (description_hash, description, estimated_calories, timestamp) VALUES (?, ?, ?, ?)",
-                (cache_key, item_desc.strip().lower(), calories, timestamp)
+                (cache_key, item_desc.strip().lower(), calories, timestamp),
             )
             conn.commit()
         logger.info(f"Cached estimate for '{item_desc}': {calories} calories")
@@ -134,11 +136,11 @@ class caldata:
     def estimate_calories_for(self, item_desc, research_client=None):
         """
         Estimate calories for a food item using AI with caching.
-        
+
         Args:
             item_desc (str): Description of the food item
             research_client: Optional Research client for AI queries
-            
+
         Returns:
             int: Estimated calories for the item
         """
@@ -146,14 +148,14 @@ class caldata:
         cached_estimate = self._get_cached_estimate(item_desc)
         if cached_estimate is not None:
             return cached_estimate
-        
+
         if not research_client:
             # Fallback to reasonable defaults if no AI client available
             calories = self._get_fallback_calories(item_desc)
             # Cache fallback estimates too
             self._cache_estimate(item_desc, calories)
             return calories
-        
+
         # Create a detailed prompt for calorie estimation
         prompt = f"""
         Please estimate the calories for the following food item: "{item_desc}"
@@ -172,60 +174,61 @@ class caldata:
         - "cup of rice" → 205
         - "banana" → 105
         """
-        
+
         try:
             # Try to get estimate from AI
-            response = research_client.query_gpt(prompt)
-            
-            # Extract numeric value from response
-            import re
-            numbers = re.findall(r'\d+', response)
-            if numbers:
-                estimated_calories = int(numbers[0])
-                # Sanity check: ensure reasonable range (10-2000 calories)
-                if 10 <= estimated_calories <= 2000:
-                    # Cache the AI estimate
-                    self._cache_estimate(item_desc, estimated_calories)
-                    return estimated_calories
-            
-            # If AI response is invalid, fall back to heuristic
-            calories = self._get_fallback_calories(item_desc)
-            self._cache_estimate(item_desc, calories)
-            return calories
-            
+            response = research_client.estimate(prompt)
+        except ProviderNotConfiguredError:
+            raise
         except Exception as e:
             logger.error(f"Error estimating calories with AI: {e}")
-            # Fall back to heuristic estimation
-            calories = self._get_fallback_calories(item_desc)
-            self._cache_estimate(item_desc, calories)
-            return calories
-    
+            response = ""
+
+        # Extract numeric value from response
+        import re
+
+        numbers = re.findall(r"\d+", response)
+        if numbers:
+            estimated_calories = int(numbers[0])
+            # Sanity check: ensure reasonable range (10-2000 calories)
+            if 10 <= estimated_calories <= 2000:
+                # Cache the AI estimate
+                self._cache_estimate(item_desc, estimated_calories)
+                return estimated_calories
+
+        # If AI response is invalid, fall back to heuristic
+        calories = self._get_fallback_calories(item_desc)
+        self._cache_estimate(item_desc, calories)
+        return calories
+
     def _get_fallback_calories(self, item_desc):
         """
         Provide fallback calorie estimates based on common food categories.
-        
+
         Args:
             item_desc (str): Description of the food item
-            
+
         Returns:
             int: Estimated calories
         """
         item_lower = item_desc.lower()
-        
+
         # Simple heuristic based on food categories
-        if any(word in item_lower for word in ['apple', 'orange', 'banana', 'fruit']):
+        if any(word in item_lower for word in ["apple", "orange", "banana", "fruit"]):
             return 80
-        elif any(word in item_lower for word in ['salad', 'lettuce', 'spinach', 'greens']):
+        elif any(
+            word in item_lower for word in ["salad", "lettuce", "spinach", "greens"]
+        ):
             return 50
-        elif any(word in item_lower for word in ['pizza', 'burger', 'fries']):
+        elif any(word in item_lower for word in ["pizza", "burger", "fries"]):
             return 350
-        elif any(word in item_lower for word in ['rice', 'pasta', 'bread']):
+        elif any(word in item_lower for word in ["rice", "pasta", "bread"]):
             return 200
-        elif any(word in item_lower for word in ['chicken', 'beef', 'meat']):
+        elif any(word in item_lower for word in ["chicken", "beef", "meat"]):
             return 250
-        elif any(word in item_lower for word in ['donut', 'cake', 'cookie', 'dessert']):
+        elif any(word in item_lower for word in ["donut", "cake", "cookie", "dessert"]):
             return 300
-        elif any(word in item_lower for word in ['soda', 'juice', 'drink']):
+        elif any(word in item_lower for word in ["soda", "juice", "drink"]):
             return 150
         else:
             return 150  # Default estimate for unknown items

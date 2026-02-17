@@ -26,6 +26,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Sync dependencies with uv (runtime + dev tools)
+        run: uv sync --frozen --extra dev --no-install-project
+
+      - name: Run black
+        run: .venv/bin/black --check .
+
+      - name: Run pylint
+        run: .venv/bin/pylint server.py data.py research.py
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 

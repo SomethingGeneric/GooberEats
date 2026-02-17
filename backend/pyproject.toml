@@ -1,0 +1,22 @@
+[project]
+name = "goobereats-backend"
+version = "0.1.0"
+description = "GooberEats backend Flask server"
+requires-python = ">=3.11"
+dependencies = [
+    "flask",
+    "requests",
+    "anthropic",
+    "openai",
+    "toml",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "pylint",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

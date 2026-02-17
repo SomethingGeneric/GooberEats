@@ -3,17 +3,16 @@ import os
 import logging
 
 # pip
-from flask import Flask, request, render_template
+from flask import Flask, request
 import toml
 
 # local
 from data import caldata
-from research import Research
+from research import ProviderNotConfiguredError, Research
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ config = toml.load("config.toml")
 
 app = Flask(__name__)
 cd = caldata()
-research = Research(config["openai"]["api_key"], config["anthropic"]["api_key"])
+research = Research(config)
 
 
 @app.route("/api/kcount", methods=["GET", "POST"])
@@ -60,12 +59,12 @@ def deal():
 def estimate_calories():
     """
     Estimate calories for a food item using AI.
-    
+
     Expects JSON payload:
     {
         "description": "food item description"
     }
-    
+
     Returns:
     {
         "description": "food item description",
@@ -75,17 +74,18 @@ def estimate_calories():
     data = request.get_json()
     if not data or "description" not in data:
         return {"error": "Missing 'description' field in request body"}, 400
-    
+
     description = data["description"].strip()
     if not description:
         return {"error": "Description cannot be empty"}, 400
-    
+
     try:
         estimated_calories = cd.estimate_calories_for(description, research)
+        return {"description": description, "estimated_calories": estimated_calories}
+    except ProviderNotConfiguredError:
         return {
-            "description": description,
-            "estimated_calories": estimated_calories
-        }
+            "error": "AI calorie estimation is not configured. Provide an API key for OpenAI or Anthropic."
+        }, 503
     except Exception as e:
         logger.error(f"Error estimating calories: {e}")
         return {"error": "Failed to estimate calories"}, 500
@@ -103,30 +103,6 @@ def get_data():
     logger.info(f"GET request for all data of id={id}")
     return str(cd.get_all_kcal(id))
 
-
-# END OF API ENDPOINTS
-
-
-@app.route("/")
-def home():
-    return render_template(
-        "page.html", content=render_template("ui.html")
-    )
-
-
-@app.route("/research")
-def research_endp():
-    return render_template("page.html", content=render_template("research.html"))
-
-
-@app.route("/research_results")
-def research_results():
-    prompt = request.args.get("prompt")
-    gpt_response, claude_response = research.combo_query(prompt)
-    return render_template(
-        "page.html",
-        content=f"<h4>GPT:</h4><textarea>{gpt_response}</textarea><br/><hr><br/><h4>Claude:</h4><textarea>{claude_response}</textarea>",
-    )
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)

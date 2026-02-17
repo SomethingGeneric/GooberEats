@@ -1,11 +1,11 @@
 package cloud.goober.goobereats;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -16,9 +16,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -28,17 +27,19 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.SecureRandom;
-import java.util.Base64;
 
 public class MainActivity extends AppCompatActivity {
 
     private TextView calSpentView;
     private EditText submitNewCal;
     private EditText submitItemDesc;
+    private EditText userIdInput;
 
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
     private static final int STRING_LENGTH = 64;
+    private static final String PREFS_NAME = "MyAppPrefs";
+    private static final String USER_ID_KEY = "userid";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +54,9 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // Initialize the TextView
+        userIdInput = findViewById(R.id.userIdInput);
+        userIdInput.setText(getOrCreateUserId());
+
         calSpentView = findViewById(R.id.calSpentView);
 
         // Start the AsyncTask to fetch data from the server
@@ -62,22 +65,41 @@ public class MainActivity extends AppCompatActivity {
         submitNewCal = findViewById(R.id.submitNewCal);
         submitItemDesc = findViewById(R.id.newItemDesc);
 
-        findViewById(R.id.submitCalButton).setOnClickListener(new View.OnClickListener() {
+        Button submitCalButton = findViewById(R.id.submitCalButton);
+        submitCalButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                persistCurrentUserId();
                 submitCalorieData();
                 new FetchDataTask().execute();
             }
         });
 
-        findViewById(R.id.resetButton).setOnClickListener(new View.OnClickListener() {
+        Button saveUserIdButton = findViewById(R.id.saveUserIdButton);
+        saveUserIdButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                emptyUserID();
-                Toast.makeText(MainActivity.this, "UID nuked", Toast.LENGTH_SHORT).show();
+            public void onClick(View v) {
+                persistCurrentUserId();
+                Toast.makeText(MainActivity.this, "User ID saved", Toast.LENGTH_SHORT).show();
+                new FetchDataTask().execute();
             }
         });
 
+        Button resetButton = findViewById(R.id.resetButton);
+        resetButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                setRandomUserId();
+                Toast.makeText(MainActivity.this, "New user ID generated", Toast.LENGTH_SHORT).show();
+                new FetchDataTask().execute();
+            }
+        });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        persistCurrentUserId();
     }
 
     public static String generateUserID() {
@@ -89,27 +111,42 @@ public class MainActivity extends AppCompatActivity {
         return sb.toString();
     }
 
-    public void emptyUserID() {
-        SharedPreferences sharedPref = this.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.remove("userid");
-        editor.apply();
-        editor.commit();
+    private void setRandomUserId() {
+        String newId = generateUserID();
+        userIdInput.setText(newId);
+        storeUserId(newId);
     }
 
-    public String truegetUserID() {
-        SharedPreferences sharedPref = this.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
-        String result = sharedPref.getString("userid", null);
-        if (result == null) {
-            String newID = generateUserID();
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString("userid", newID);
-            editor.apply();
-            editor.commit();
-            return newID;
-        } else {
-            return result;
+    private void persistCurrentUserId() {
+        if (userIdInput == null) {
+            return;
         }
+        String currentId = userIdInput.getText().toString().trim();
+        if (currentId.isEmpty()) {
+            currentId = generateUserID();
+            userIdInput.setText(currentId);
+        }
+        storeUserId(currentId);
+    }
+
+    private void storeUserId(String userId) {
+        SharedPreferences sharedPref = this.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        sharedPref.edit().putString(USER_ID_KEY, userId).apply();
+    }
+
+    private String getStoredUserId() {
+        SharedPreferences sharedPref = this.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPref.getString(USER_ID_KEY, null);
+    }
+
+    private String getOrCreateUserId() {
+        String stored = getStoredUserId();
+        if (stored == null || stored.trim().isEmpty()) {
+            String newId = generateUserID();
+            storeUserId(newId);
+            return newId;
+        }
+        return stored;
     }
 
     // AsyncTask to perform network operations on a background thread
@@ -121,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
             String storedCalories = null;
             try {
                 // Create the URL and connection
-                URL url = new URL("http://eats.goober.cloud:5000/api/datafor?id=" + getUserID()); // Append userId as query parameter for GET
+                URL url = new URL("https://eats.mattcompton.dev/api/datafor?id=" + getUserID()); // Append userId as query parameter for GET
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setRequestProperty("Content-Type", "application/json");
@@ -193,13 +230,14 @@ public class MainActivity extends AppCompatActivity {
 
         // Method to get the userID
         private String getUserID() {
-            return truegetUserID();
+            return getOrCreateUserId();
         }
     }
 
 
     // Method to get user input and make a POST request
     private void submitCalorieData() {
+        persistCurrentUserId();
         String userInput = submitNewCal.getText().toString().trim();
         String itemDesc = submitItemDesc.getText().toString().trim();
 
@@ -228,7 +266,7 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(Void... voids) {
             try {
                 // Create the URL and connection
-                URL url = new URL("http://eats.goober.cloud:5000/api/kcount");
+                URL url = new URL("https://eats.mattcompton.dev/api/kcount");
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("Content-Type", "application/json; utf-8");
@@ -246,7 +284,7 @@ public class MainActivity extends AppCompatActivity {
                 // Create JSON payload
                 JSONObject jsonBody = new JSONObject();
                 jsonBody.put("kcal", newcals);
-                jsonBody.put("id", truegetUserID());
+                jsonBody.put("id", getOrCreateUserId());
                 jsonBody.put("desc", itemDesc);
 
                 // Write the JSON data to the request body

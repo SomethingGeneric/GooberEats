@@ -1,7 +1,7 @@
 services:
   goobereats-backend:
-    image: verygeneric/goobereats:${GOOBEREATS_IMAGE_TAG:-latest}
-    pull_policy: always
+    build:
+      context: .
     ports:
       - "5000:5000"
     volumes:

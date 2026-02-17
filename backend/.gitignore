@@ -3,3 +3,4 @@ calories.txt
 cal_data/
 __pycache__/
 config.toml
+.uv-cache/

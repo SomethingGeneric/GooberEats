@@ -1,5 +1,7 @@
 [openai]
-api_key = "sk-proj-..."
+# Set to your OpenAI API key. Leave blank (or remove this section) to disable OpenAI integration.
+api_key = ""
 
 [anthropic]
-api_key = "sk-ant-..."
+# Set to your Anthropic API key. Leave blank (or remove this section) to disable Anthropic integration.
+api_key = ""
