@@ -40,7 +40,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/goobereats-backend
+          images: verygeneric/goobereats
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -54,5 +54,5 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/goobereats-backend:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/goobereats-backend:buildcache,mode=max
+          cache-from: type=registry,ref=verygeneric/goobereats:buildcache
+          cache-to: type=registry,ref=verygeneric/goobereats:buildcache,mode=max

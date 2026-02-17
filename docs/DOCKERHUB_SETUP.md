@@ -29,7 +29,7 @@ This document explains how to set up the GitHub Actions workflow to automaticall
 
    **DOCKERHUB_USERNAME**
    - Name: `DOCKERHUB_USERNAME`
-   - Value: Your DockerHub username (e.g., `johndoe`)
+   - Value: `verygeneric` (the DockerHub username for this project)
 
    **DOCKERHUB_TOKEN**
    - Name: `DOCKERHUB_TOKEN`
@@ -50,18 +50,18 @@ To manually test:
 
 ### Step 4: Using the Docker Image
 
-Once the workflow runs successfully, your image will be available on DockerHub:
+Once the workflow runs successfully, your image will be available on DockerHub at `verygeneric/goobereats`:
 
 ```bash
 # Pull the latest image
-docker pull <your-dockerhub-username>/goobereats-backend:latest
+docker pull verygeneric/goobereats:latest
 
 # Run the container
 docker run -d \
   -p 5000:5000 \
   -v $(pwd)/cal_data:/app/cal_data \
   -v $(pwd)/config.toml:/app/config.toml:ro \
-  <your-dockerhub-username>/goobereats-backend:latest
+  verygeneric/goobereats:latest
 ```
 
 Or use docker-compose by updating the image name in `docker-compose.yml`:
@@ -69,7 +69,7 @@ Or use docker-compose by updating the image name in `docker-compose.yml`:
 ```yaml
 services:
   goobereats-backend:
-    image: <your-dockerhub-username>/goobereats-backend:latest
+    image: verygeneric/goobereats:latest
     # ... rest of configuration
 ```
 
