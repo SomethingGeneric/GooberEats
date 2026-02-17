@@ -1,5 +1,6 @@
 import sqlite3, os, json
 from datetime import datetime
+import hashlib
 
 
 class caldata:
@@ -15,6 +16,11 @@ class caldata:
         c.execute(
             """CREATE TABLE IF NOT EXISTS calories
                      (user_id TEXT, datestamp TEXT, calorie_count INTEGER, description TEXT)"""
+        )
+        # Create cache table for AI calorie estimations
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS calorie_cache
+                     (description_hash TEXT PRIMARY KEY, description TEXT, estimated_calories INTEGER, timestamp TEXT)"""
         )
         conn.commit()
         conn.close()
@@ -65,9 +71,70 @@ class caldata:
             )
         return json.dumps(json_result)
 
+    def _get_cache_key(self, item_desc):
+        """
+        Generate a cache key for a food item description.
+        
+        Args:
+            item_desc (str): Description of the food item
+            
+        Returns:
+            str: Hash of the normalized description
+        """
+        # Normalize the description (lowercase, strip whitespace) for consistent caching
+        normalized = item_desc.strip().lower()
+        return hashlib.md5(normalized.encode()).hexdigest()
+    
+    def _get_cached_estimate(self, item_desc):
+        """
+        Get cached calorie estimate for a food item.
+        
+        Args:
+            item_desc (str): Description of the food item
+            
+        Returns:
+            int or None: Cached calorie estimate if found, None otherwise
+        """
+        cache_key = self._get_cache_key(item_desc)
+        conn = sqlite3.connect("cal_data/calories.db")
+        c = conn.cursor()
+        c.execute(
+            "SELECT estimated_calories FROM calorie_cache WHERE description_hash = ?",
+            (cache_key,)
+        )
+        result = c.fetchone()
+        conn.close()
+        
+        if result:
+            print(f"Cache hit for '{item_desc}': {result[0]} calories")
+            return result[0]
+        return None
+    
+    def _cache_estimate(self, item_desc, calories):
+        """
+        Cache a calorie estimate for a food item.
+        
+        Args:
+            item_desc (str): Description of the food item
+            calories (int): Estimated calories
+        """
+        cache_key = self._get_cache_key(item_desc)
+        timestamp = datetime.now().isoformat()
+        
+        conn = sqlite3.connect("cal_data/calories.db")
+        c = conn.cursor()
+        # Use INSERT OR REPLACE to update existing cache entries
+        c.execute(
+            "INSERT OR REPLACE INTO calorie_cache (description_hash, description, estimated_calories, timestamp) VALUES (?, ?, ?, ?)",
+            (cache_key, item_desc.strip().lower(), calories, timestamp)
+        )
+        conn.commit()
+        conn.close()
+        print(f"Cached estimate for '{item_desc}': {calories} calories")
+
     def estimate_calories_for(self, item_desc, research_client=None):
         """
-        Estimate calories for a food item using AI.
+        Estimate calories for a food item using AI with caching.
         
         Args:
             item_desc (str): Description of the food item
@@ -76,9 +143,17 @@ class caldata:
         Returns:
             int: Estimated calories for the item
         """
+        # Check cache first
+        cached_estimate = self._get_cached_estimate(item_desc)
+        if cached_estimate is not None:
+            return cached_estimate
+        
         if not research_client:
             # Fallback to reasonable defaults if no AI client available
-            return self._get_fallback_calories(item_desc)
+            calories = self._get_fallback_calories(item_desc)
+            # Cache fallback estimates too
+            self._cache_estimate(item_desc, calories)
+            return calories
         
         # Create a detailed prompt for calorie estimation
         prompt = f"""
@@ -110,15 +185,21 @@ class caldata:
                 estimated_calories = int(numbers[0])
                 # Sanity check: ensure reasonable range (10-2000 calories)
                 if 10 <= estimated_calories <= 2000:
+                    # Cache the AI estimate
+                    self._cache_estimate(item_desc, estimated_calories)
                     return estimated_calories
             
             # If AI response is invalid, fall back to heuristic
-            return self._get_fallback_calories(item_desc)
+            calories = self._get_fallback_calories(item_desc)
+            self._cache_estimate(item_desc, calories)
+            return calories
             
         except Exception as e:
             print(f"Error estimating calories with AI: {e}")
             # Fall back to heuristic estimation
-            return self._get_fallback_calories(item_desc)
+            calories = self._get_fallback_calories(item_desc)
+            self._cache_estimate(item_desc, calories)
+            return calories
     
     def _get_fallback_calories(self, item_desc):
         """
