@@ -56,13 +56,23 @@ DOCKER_BUILD_ARGS="--build-arg ANDROID_PLATFORM=android-35 --build-arg ANDROID_B
 
 ### Smoke-Testing the Android App in an Emulator
 
-With the Android SDK + emulator tools installed (`ANDROID_SDK_ROOT` set), you can bootstrap an AVD, install the latest debug build, and launch the app automatically:
+You can bootstrap an AVD, install the latest debug build, and launch the app automatically:
 
 ```bash
 ./test.sh
 ```
 
+If `ANDROID_SDK_ROOT` is unset, the script bootstraps a minimal SDK into `.android-sdk/` inside the repo and reuses it on subsequent runs.
+
 Pass `--docker-build` to build the APK inside Docker before running the emulator, or `--skip-build` if you already have an APK in `dist/`.
+
+> Requirements: Java (`java` on PATH), `unzip`, and either `curl` or `wget`; the script installs the Android command-line tools and emulator binaries automatically.
+
+Environment overrides:
+- `BUILD_PLATFORM` (default `android-36`)
+- `BUILD_TOOLS` (default `36.0.0`)
+- `SYSTEM_IMAGE` (default `system-images;android-34;google_apis;x86_64`)
+- `AVD_NAME` (default `GooberEatsTestAvd`)
 
 ## AI Calorie Estimation
 

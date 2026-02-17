@@ -11,9 +11,12 @@ APK_PATH="${OUTPUT_DIR}/${APK_NAME}"
 
 AVD_NAME="${AVD_NAME:-GooberEatsTestAvd}"
 SYSTEM_IMAGE="${SYSTEM_IMAGE:-system-images;android-34;google_apis;x86_64}"
+BUILD_PLATFORM="${BUILD_PLATFORM:-android-36}"
+BUILD_TOOLS="${BUILD_TOOLS:-36.0.0}"
 
 USE_DOCKER_BUILD=false
 SKIP_BUILD=false
+EMULATOR_HEADLESS="${EMULATOR_HEADLESS:-0}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -33,9 +36,13 @@ while [[ $# -gt 0 ]]; do
       AVD_NAME="${2:?--avd-name requires a value}"
       shift 2
       ;;
+    --headless)
+      EMULATOR_HEADLESS=1
+      shift
+      ;;
     *)
       echo "error: unknown argument '$1'" >&2
-      echo "usage: $0 [--docker-build] [--skip-build] [--system-image <id>] [--avd-name <name>]" >&2
+      echo "usage: $0 [--docker-build] [--skip-build] [--system-image <id>] [--avd-name <name>] [--headless]" >&2
       exit 1
       ;;
   esac
@@ -53,19 +60,102 @@ ensure_command() {
   fi
 }
 
+download_file() {
+  local url="$1"
+  local destination="$2"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "${url}" -o "${destination}"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q "${url}" -O "${destination}"
+  else
+    echo "error: neither curl nor wget is available to download ${url}" >&2
+    exit 1
+  fi
+}
+
+ensure_cmdline_tools() {
+  local tools_bin="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin"
+  if [[ -x "${tools_bin}/sdkmanager" ]]; then
+    return
+  fi
+
+  echo "[test.sh] Android SDK not found; downloading command-line tools..."
+  ensure_command unzip
+
+  local tmpdir
+  tmpdir="$(mktemp -d)"
+  local archive="${tmpdir}/commandlinetools.zip"
+  local url="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+
+  download_file "${url}" "${archive}"
+  unzip -q "${archive}" -d "${tmpdir}"
+
+  mkdir -p "${ANDROID_SDK_ROOT}/cmdline-tools"
+  rm -rf "${ANDROID_SDK_ROOT}/cmdline-tools/latest"
+  mv "${tmpdir}/cmdline-tools" "${ANDROID_SDK_ROOT}/cmdline-tools/latest"
+
+  rm -rf "${tmpdir}"
+}
+
+DEFAULT_SDK_DIR="${REPO_ROOT}/.android-sdk"
 ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
 if [[ -z "${ANDROID_SDK_ROOT}" ]]; then
-  echo "error: ANDROID_SDK_ROOT (or ANDROID_HOME) must be set to your Android SDK installation" >&2
-  exit 1
+  ANDROID_SDK_ROOT="${DEFAULT_SDK_DIR}"
 fi
+
+mkdir -p "${ANDROID_SDK_ROOT}"
+
+if [[ "${ANDROID_SDK_ROOT}" == "${DEFAULT_SDK_DIR}" ]]; then
+  echo "[test.sh] Using Android SDK directory ${ANDROID_SDK_ROOT}"
+fi
+
+ensure_cmdline_tools
 
 export ANDROID_SDK_ROOT
 export ANDROID_HOME="${ANDROID_SDK_ROOT}"
+export PATH="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:${ANDROID_SDK_ROOT}/emulator:${PATH}"
 
+ensure_command java
 ensure_command sdkmanager
 ensure_command avdmanager
-ensure_command emulator
-ensure_command adb
+
+run_sdkmanager() {
+  local description="$1"
+  shift
+  local log_file
+  log_file="$(mktemp)"
+  echo "[test.sh] ${description}..."
+  set +e
+  yes | sdkmanager "$@" >"${log_file}" 2>&1
+  local status=$?
+  set -e
+  if (( status != 0 )); then
+    if grep -Eq "All SDK package licenses accepted" "${log_file}"; then
+      status=0
+    fi
+  fi
+  if (( status != 0 )); then
+    if grep -Eq "Computing updates" "${log_file}" || grep -Eq "Unzipping" "${log_file}"; then
+      status=0
+    fi
+  fi
+  if (( status != 0 )); then
+    echo "error: sdkmanager ${description} failed. Output:" >&2
+    cat "${log_file}" >&2
+    rm -f "${log_file}"
+    exit 1
+  fi
+  rm -f "${log_file}"
+}
+
+run_sdkmanager "Accepting Android SDK licenses" --licenses
+run_sdkmanager "Installing core SDK packages" --install \
+  "platform-tools" \
+  "platforms;${BUILD_PLATFORM}" \
+  "build-tools;${BUILD_TOOLS}"
+run_sdkmanager "Installing emulator packages" --install \
+  "emulator" \
+  "${SYSTEM_IMAGE}"
 
 if [[ "${SKIP_BUILD}" != "true" ]]; then
   BUILD_ARGS=()
@@ -80,10 +170,10 @@ if [[ ! -f "${APK_PATH}" ]]; then
   exit 1
 fi
 
-echo "[test.sh] Installing required Android SDK components..."
-yes | sdkmanager --licenses >/dev/null
+export PATH="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:${ANDROID_SDK_ROOT}/emulator:${PATH}"
 
-sdkmanager --install "platform-tools" "emulator" "${SYSTEM_IMAGE}" >/dev/null
+ensure_command emulator
+ensure_command adb
 
 AVD_EXISTS=false
 if avdmanager list avd | grep -Fq "Name: ${AVD_NAME}"; then
@@ -93,7 +183,11 @@ fi
 if [[ "${AVD_EXISTS}" != "true" ]]; then
   echo "[test.sh] Creating AVD '${AVD_NAME}' using ${SYSTEM_IMAGE}"
   # shellcheck disable=SC2016
-  echo "no" | avdmanager create avd -n "${AVD_NAME}" -k "${SYSTEM_IMAGE}" --device "pixel_5" >/dev/null
+  if ! (echo "no" | avdmanager create avd -n "${AVD_NAME}" -k "${SYSTEM_IMAGE}" --device "pixel_5" >/dev/null); then
+    echo "[test.sh] 'pixel_5' device not available; retrying with generic 'pixel' profile"
+    # shellcheck disable=SC2016
+    echo "no" | avdmanager create avd -n "${AVD_NAME}" -k "${SYSTEM_IMAGE}" --device "pixel" >/dev/null
+  fi
 fi
 
 echo "[test.sh] Starting emulator '${AVD_NAME}'..."
@@ -106,7 +200,7 @@ EMULATOR_ARGS=(
   -no-audio
 )
 
-if [[ "${EMULATOR_HEADLESS:-1}" == "1" ]]; then
+if [[ "${EMULATOR_HEADLESS}" == "1" ]]; then
   EMULATOR_ARGS+=(-no-window)
 fi
 
