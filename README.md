@@ -54,6 +54,16 @@ DOCKER_BUILD_ARGS="--build-arg ANDROID_PLATFORM=android-35 --build-arg ANDROID_B
   ./scripts/build-apk.sh --docker
 ```
 
+### Smoke-Testing the Android App in an Emulator
+
+With the Android SDK + emulator tools installed (`ANDROID_SDK_ROOT` set), you can bootstrap an AVD, install the latest debug build, and launch the app automatically:
+
+```bash
+./test.sh
+```
+
+Pass `--docker-build` to build the APK inside Docker before running the emulator, or `--skip-build` if you already have an APK in `dist/`.
+
 ## AI Calorie Estimation
 
 The system now includes AI-powered calorie estimation that can provide accurate calorie estimates for food items based on their description. The feature includes:

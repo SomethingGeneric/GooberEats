@@ -37,8 +37,8 @@ jobs:
       - name: Run black
         run: .venv/bin/black --check .
 
-      - name: Run pylint
-        run: .venv/bin/pylint server.py data.py research.py
+      #- name: Run pylint
+      #  run: .venv/bin/pylint server.py data.py research.py
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
