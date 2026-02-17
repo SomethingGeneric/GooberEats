@@ -8,10 +8,4 @@
         android:icon="@drawable/ic_user_id"
         app:showAsAction="always" />
 
-    <item
-        android:id="@+id/action_quick_entry"
-        android:title="@string/menu_quick_entry"
-        android:icon="@drawable/ic_quick_entry"
-        app:showAsAction="always" />
-
 </menu>

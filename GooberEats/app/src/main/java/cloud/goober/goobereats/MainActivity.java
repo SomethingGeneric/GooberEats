@@ -63,12 +63,15 @@ public class MainActivity extends AppCompatActivity {
     private final List<DisplayItem> displayItems = new ArrayList<>();
     private final List<QuickEntryOption> quickEntryOptions = new ArrayList<>();
     private String currentUserId;
+    private String currentApiBase;
 
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
     private static final int STRING_LENGTH = 64;
     private static final String PREFS_NAME = "MyAppPrefs";
     private static final String USER_ID_KEY = "userid";
+    private static final String API_BASE_KEY = "api_base_url";
+    private static final String DEFAULT_API_BASE = "https://eats.mattcompton.dev";
     private static final int VIEW_TYPE_HEADER = 0;
     private static final int VIEW_TYPE_ENTRY = 1;
 
@@ -86,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         currentUserId = getOrCreateUserId();
+        currentApiBase = getApiBaseUrl();
 
         MaterialToolbar toolbar = findViewById(R.id.topAppBar);
         setSupportActionBar(toolbar);
@@ -99,6 +103,12 @@ public class MainActivity extends AppCompatActivity {
         aiEntryFab.setOnClickListener(v -> {
             persistCurrentUserId();
             showAiEntryDialog();
+        });
+
+        ExtendedFloatingActionButton quickEntryFab = findViewById(R.id.quickEntryFab);
+        quickEntryFab.setOnClickListener(v -> {
+            persistCurrentUserId();
+            showQuickEntryDialog();
         });
 
         FloatingActionButton addEntryFab = findViewById(R.id.addEntryFab);
@@ -132,9 +142,6 @@ public class MainActivity extends AppCompatActivity {
         if (item.getItemId() == R.id.action_user_id) {
             showUserIdDialog();
             return true;
-        } else if (item.getItemId() == R.id.action_quick_entry) {
-            showQuickEntryDialog();
-            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -143,6 +150,11 @@ public class MainActivity extends AppCompatActivity {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_user_id, null);
         TextInputEditText userIdField = dialogView.findViewById(R.id.dialogUserIdInput);
         userIdField.setText(getOrCreateUserId());
+        TextInputLayout apiBaseLayout = dialogView.findViewById(R.id.dialogApiBaseLayout);
+        TextInputEditText apiBaseInput = dialogView.findViewById(R.id.dialogApiBaseInput);
+        if (apiBaseInput != null) {
+            apiBaseInput.setText(getApiBaseUrl());
+        }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.dialog_user_id_title)
@@ -158,13 +170,33 @@ public class MainActivity extends AppCompatActivity {
         dialog.setOnShowListener(dlg -> {
             Button saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             saveButton.setOnClickListener(v -> {
+                if (apiBaseLayout != null) {
+                    apiBaseLayout.setError(null);
+                }
                 CharSequence rawInput = userIdField.getText();
                 String newId = rawInput != null ? rawInput.toString().trim() : "";
                 if (newId.isEmpty()) {
                     userIdField.setError(getString(R.string.dialog_user_id_hint));
                     return;
                 }
+                String newBase = apiBaseInput != null && apiBaseInput.getText() != null
+                        ? apiBaseInput.getText().toString().trim()
+                        : "";
+                if (TextUtils.isEmpty(newBase)) {
+                    if (apiBaseLayout != null) {
+                        apiBaseLayout.setError(getString(R.string.dialog_api_base_hint));
+                    }
+                    return;
+                }
+                String normalizedBase = normalizeBaseUrl(newBase);
+                if (TextUtils.isEmpty(normalizedBase)) {
+                    if (apiBaseLayout != null) {
+                        apiBaseLayout.setError(getString(R.string.dialog_api_base_hint));
+                    }
+                    return;
+                }
                 storeUserId(newId);
+                storeApiBase(normalizedBase);
                 Toast.makeText(MainActivity.this, "User ID saved", Toast.LENGTH_SHORT).show();
                 refreshCalorieData();
                 dialog.dismiss();
@@ -323,6 +355,12 @@ public class MainActivity extends AppCompatActivity {
         currentUserId = userId;
     }
 
+    private void storeApiBase(String apiBase) {
+        SharedPreferences sharedPref = this.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        sharedPref.edit().putString(API_BASE_KEY, apiBase).apply();
+        currentApiBase = apiBase;
+    }
+
     private String getStoredUserId() {
         SharedPreferences sharedPref = this.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPref.getString(USER_ID_KEY, null);
@@ -342,6 +380,43 @@ public class MainActivity extends AppCompatActivity {
         return currentUserId;
     }
 
+    private String getStoredApiBase() {
+        SharedPreferences sharedPref = this.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPref.getString(API_BASE_KEY, null);
+    }
+
+    private String getApiBaseUrl() {
+        if (currentApiBase != null && !currentApiBase.trim().isEmpty()) {
+            return currentApiBase;
+        }
+        String stored = getStoredApiBase();
+        if (stored == null || stored.trim().isEmpty()) {
+            storeApiBase(DEFAULT_API_BASE);
+            return DEFAULT_API_BASE;
+        }
+        currentApiBase = stored;
+        return currentApiBase;
+    }
+
+    private String normalizeBaseUrl(String base) {
+        if (base == null) {
+            return "";
+        }
+        String trimmed = base.trim();
+        while (trimmed.endsWith("/") && trimmed.length() > 1) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed;
+    }
+
+    private String buildApiUrl(String path) {
+        String base = getApiBaseUrl();
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+        return base + path;
+    }
+
     // AsyncTask to perform network operations on a background thread
     private class FetchDataTask extends AsyncTask<Void, Void, List<CalorieEntry>> {
         private Exception exception;
@@ -351,7 +426,7 @@ public class MainActivity extends AppCompatActivity {
             List<CalorieEntry> entries = Collections.emptyList();
             try {
                 // Create the URL and connection
-                URL url = new URL("https://eats.mattcompton.dev/api/datafor?id=" + getUserID()); // Append userId as query parameter for GET
+                URL url = new URL(buildApiUrl("/api/datafor") + "?id=" + getUserID()); // Append userId as query parameter for GET
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setRequestProperty("Content-Type", "application/json");
@@ -702,7 +777,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Integer doInBackground(Void... voids) {
             try {
-                URL url = new URL("https://eats.mattcompton.dev/api/estimate");
+                URL url = new URL(buildApiUrl("/api/estimate"));
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("Content-Type", "application/json; utf-8");
@@ -804,7 +879,7 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(Void... voids) {
             try {
                 // Create the URL and connection
-                URL url = new URL("https://eats.mattcompton.dev/api/kcount");
+                URL url = new URL(buildApiUrl("/api/kcount"));
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("Content-Type", "application/json; utf-8");

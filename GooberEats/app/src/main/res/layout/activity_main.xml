@@ -45,6 +45,21 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/quickEntryFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/fab_quick_entry"
+        android:contentDescription="@string/fab_quick_entry"
+        app:backgroundTint="?attr/colorTertiaryContainer"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="160dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:icon="@drawable/ic_quick_entry"
+        app:iconTint="?attr/colorOnTertiaryContainer"
+        android:textColor="?attr/colorOnTertiaryContainer" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/addEntryFab"
         android:layout_width="wrap_content"

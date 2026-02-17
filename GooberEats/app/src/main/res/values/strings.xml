@@ -6,6 +6,7 @@
     <string name="dialog_user_id_save">Save</string>
     <string name="dialog_user_id_cancel">Cancel</string>
     <string name="dialog_user_id_random">Randomize</string>
+    <string name="dialog_api_base_hint">API base URL</string>
     <string name="time_not_available">time n/a</string>
     <string name="fab_add_entry">Add entry</string>
     <string name="dialog_new_entry_title">Log Calories</string>
@@ -21,7 +22,7 @@
     <string name="dialog_ai_entry_hint">describe what you ate</string>
     <string name="dialog_ai_entry_submit">Let’s go</string>
     <string name="dialog_ai_entry_cancel">Cancel</string>
-    <string name="menu_quick_entry">Quick add</string>
+    <string name="fab_quick_entry">Reuse</string>
     <string name="quick_entry_dialog_title">Add a favorite</string>
     <string name="quick_entry_empty">No recent items to reuse yet</string>
     <string name="toast_ai_result">AI guessed %1$d kcal</string>
