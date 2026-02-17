@@ -87,7 +87,8 @@ class caldata:
         """
         # Normalize the description (lowercase, strip whitespace) for consistent caching
         normalized = item_desc.strip().lower()
-        return hashlib.md5(normalized.encode()).hexdigest()
+        # MD5 is used only for cache key generation, not security
+        return hashlib.md5(normalized.encode(), usedforsecurity=False).hexdigest()
     
     def _get_cached_estimate(self, item_desc):
         """
