@@ -56,6 +56,9 @@ Once the workflow runs successfully, your image will be available on DockerHub a
 # Pull the latest image
 docker pull verygeneric/goobereats:latest
 
+# Or pull a specific dated version
+docker pull verygeneric/goobereats:2026.02.17.42
+
 # Run the container
 docker run -d \
   -p 5000:5000 \
@@ -70,6 +73,8 @@ Or use docker-compose by updating the image name in `docker-compose.yml`:
 services:
   goobereats-backend:
     image: verygeneric/goobereats:latest
+    # Or use a specific version:
+    # image: verygeneric/goobereats:2026.02.17.42
     # ... rest of configuration
 ```
 
@@ -77,13 +82,19 @@ services:
 
 The workflow:
 - Builds the Docker image from the `backend/` directory
-- Tags it with:
-  - Branch name (e.g., `main`)
-  - Git SHA (e.g., `main-abc1234`)
-  - `latest` tag (only for main branch)
+- Tags images with date-based versioning: `YYYY.MM.DD.R`
+  - Example: `2026.02.17.42` (where 42 is the workflow run number)
+  - `latest` tag (only for main branch pushes)
+  - `pr-XX` tag (only for pull requests)
 - Pushes to DockerHub (only on push to main, not on PRs)
 - Uses layer caching to speed up builds
 - Only runs when backend code changes
+
+The date-based tagging ensures:
+- Clear versioning with timestamp information
+- Unique tags for each build via run number
+- Easy identification of when an image was built
+- No conflicts with Docker tag naming restrictions
 
 ## Troubleshooting
 

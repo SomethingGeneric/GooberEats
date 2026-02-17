@@ -36,16 +36,30 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Generate date-based tag
+        id: date-tag
+        run: |
+          # Generate YYYY.MM.DD format
+          DATE_TAG=$(date -u +"%Y.%m.%d")
+          
+          # For the run number (R), use GitHub's run_number which increments per workflow
+          RUN_NUM="${{ github.run_number }}"
+          
+          # Combine into YYYY.MM.DD.R format
+          FULL_TAG="${DATE_TAG}.${RUN_NUM}"
+          
+          echo "tag=${FULL_TAG}" >> $GITHUB_OUTPUT
+          echo "Generated tag: ${FULL_TAG}"
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: verygeneric/goobereats
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
+            type=raw,value=${{ steps.date-tag.outputs.tag }}
             type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=pr,prefix=pr-
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
