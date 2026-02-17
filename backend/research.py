@@ -13,10 +13,9 @@ class Research:
         self.openai_api_key = (config.get("openai") or {}).get("api_key") or os.getenv(
             "OPENAI_API_KEY"
         )
-        self.anthropic_api_key = (
-            (config.get("anthropic") or {}).get("api_key")
-            or os.getenv("ANTHROPIC_API_KEY")
-        )
+        self.anthropic_api_key = (config.get("anthropic") or {}).get(
+            "api_key"
+        ) or os.getenv("ANTHROPIC_API_KEY")
         self._openai_client = None
         self._anthropic_client = None
 
