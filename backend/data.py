@@ -1,6 +1,10 @@
 import sqlite3, os, json
 from datetime import datetime
 import hashlib
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class caldata:
@@ -106,7 +110,7 @@ class caldata:
         conn.close()
         
         if result:
-            print(f"Cache hit for '{item_desc}': {result[0]} calories")
+            logger.info(f"Cache hit for '{item_desc}': {result[0]} calories")
             return result[0]
         return None
     
@@ -130,7 +134,7 @@ class caldata:
         )
         conn.commit()
         conn.close()
-        print(f"Cached estimate for '{item_desc}': {calories} calories")
+        logger.info(f"Cached estimate for '{item_desc}': {calories} calories")
 
     def estimate_calories_for(self, item_desc, research_client=None):
         """

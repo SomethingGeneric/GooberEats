@@ -1,5 +1,6 @@
 # stdlib
 import os
+import logging
 
 # pip
 from flask import Flask, request, render_template
@@ -8,6 +9,12 @@ import toml
 # local
 from data import caldata
 from research import Research
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 config = toml.load("config.toml")
 
