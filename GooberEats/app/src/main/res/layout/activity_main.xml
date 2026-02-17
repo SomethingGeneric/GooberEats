@@ -8,51 +8,21 @@
     android:padding="16dp"
     tools:context=".MainActivity">
 
-    <TextView
-        android:id="@+id/userIdLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="User ID"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <EditText
-        android:id="@+id/userIdInput"
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/topAppBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:hint="user id"
-        android:inputType="textVisiblePassword"
+        android:background="?attr/colorSurface"
+        android:theme="@style/ThemeOverlay.Material3.ActionBar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/userIdLabel" />
-
-    <Button
-        android:id="@+id/saveUserIdButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="Save UID"
-        app:layout_constraintEnd_toStartOf="@id/resetButton"
-        app:layout_constraintHorizontal_chainStyle="packed"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/userIdInput" />
-
-    <Button
-        android:id="@+id/resetButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Random UID"
-        app:layout_constraintBaseline_toBaselineOf="@id/saveUserIdButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/saveUserIdButton" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="@string/app_name" />
 
     <TextView
         android:id="@+id/calSpentView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
         android:ems="10"
         android:gravity="start|top"
         android:minHeight="160dp"
@@ -60,10 +30,11 @@
         android:background="@android:drawable/edit_text"
         android:textAppearance="?attr/textAppearanceBodySmall"
         android:inputType="textMultiLine"
+        android:layout_marginTop="16dp"
         app:layout_constraintBottom_toTopOf="@id/submitNewCal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/saveUserIdButton" />
+        app:layout_constraintTop_toBottomOf="@id/topAppBar" />
 
     <EditText
         android:id="@+id/submitNewCal"

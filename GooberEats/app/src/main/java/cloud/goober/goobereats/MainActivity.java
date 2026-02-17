@@ -4,6 +4,9 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -11,10 +14,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.textfield.TextInputEditText;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,13 +34,24 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     private TextView calSpentView;
     private EditText submitNewCal;
     private EditText submitItemDesc;
-    private EditText userIdInput;
+    private String currentUserId;
 
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -54,13 +72,15 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        userIdInput = findViewById(R.id.userIdInput);
-        userIdInput.setText(getOrCreateUserId());
+        currentUserId = getOrCreateUserId();
+
+        MaterialToolbar toolbar = findViewById(R.id.topAppBar);
+        setSupportActionBar(toolbar);
 
         calSpentView = findViewById(R.id.calSpentView);
 
         // Start the AsyncTask to fetch data from the server
-        new FetchDataTask().execute(); // TODO: annotated as deprecated?
+        refreshCalorieData();
 
         submitNewCal = findViewById(R.id.submitNewCal);
         submitItemDesc = findViewById(R.id.newItemDesc);
@@ -71,35 +91,69 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 persistCurrentUserId();
                 submitCalorieData();
-                new FetchDataTask().execute();
+                refreshCalorieData();
             }
         });
+    }
 
-        Button saveUserIdButton = findViewById(R.id.saveUserIdButton);
-        saveUserIdButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                persistCurrentUserId();
-                Toast.makeText(MainActivity.this, "User ID saved", Toast.LENGTH_SHORT).show();
-                new FetchDataTask().execute();
-            }
-        });
-
-        Button resetButton = findViewById(R.id.resetButton);
-        resetButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                setRandomUserId();
-                Toast.makeText(MainActivity.this, "New user ID generated", Toast.LENGTH_SHORT).show();
-                new FetchDataTask().execute();
-            }
-        });
+    private void refreshCalorieData() {
+        new FetchDataTask().execute();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         persistCurrentUserId();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_user_id) {
+            showUserIdDialog();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showUserIdDialog() {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_user_id, null);
+        TextInputEditText userIdField = dialogView.findViewById(R.id.dialogUserIdInput);
+        userIdField.setText(getOrCreateUserId());
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_user_id_title)
+                .setView(dialogView)
+                .setPositiveButton(R.string.dialog_user_id_save, null)
+                .setNegativeButton(R.string.dialog_user_id_cancel, (d, which) -> {
+                })
+                .create();
+
+        Button randomButton = dialogView.findViewById(R.id.dialogRandomButton);
+        randomButton.setOnClickListener(v -> userIdField.setText(generateUserID()));
+
+        dialog.setOnShowListener(dlg -> {
+            Button saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            saveButton.setOnClickListener(v -> {
+                CharSequence rawInput = userIdField.getText();
+                String newId = rawInput != null ? rawInput.toString().trim() : "";
+                if (newId.isEmpty()) {
+                    userIdField.setError(getString(R.string.dialog_user_id_hint));
+                    return;
+                }
+                storeUserId(newId);
+                Toast.makeText(MainActivity.this, "User ID saved", Toast.LENGTH_SHORT).show();
+                refreshCalorieData();
+                dialog.dismiss();
+            });
+        });
+
+        dialog.show();
     }
 
     public static String generateUserID() {
@@ -111,27 +165,17 @@ public class MainActivity extends AppCompatActivity {
         return sb.toString();
     }
 
-    private void setRandomUserId() {
-        String newId = generateUserID();
-        userIdInput.setText(newId);
-        storeUserId(newId);
-    }
-
     private void persistCurrentUserId() {
-        if (userIdInput == null) {
-            return;
+        if (currentUserId == null || currentUserId.trim().isEmpty()) {
+            currentUserId = generateUserID();
         }
-        String currentId = userIdInput.getText().toString().trim();
-        if (currentId.isEmpty()) {
-            currentId = generateUserID();
-            userIdInput.setText(currentId);
-        }
-        storeUserId(currentId);
+        storeUserId(currentUserId);
     }
 
     private void storeUserId(String userId) {
         SharedPreferences sharedPref = this.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         sharedPref.edit().putString(USER_ID_KEY, userId).apply();
+        currentUserId = userId;
     }
 
     private String getStoredUserId() {
@@ -140,13 +184,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String getOrCreateUserId() {
+        if (currentUserId != null && !currentUserId.trim().isEmpty()) {
+            return currentUserId;
+        }
         String stored = getStoredUserId();
         if (stored == null || stored.trim().isEmpty()) {
             String newId = generateUserID();
             storeUserId(newId);
             return newId;
         }
-        return stored;
+        currentUserId = stored;
+        return currentUserId;
     }
 
     // AsyncTask to perform network operations on a background thread
@@ -177,30 +225,9 @@ public class MainActivity extends AppCompatActivity {
 
                     String rawjson = content.toString();
 
-                    // Parse the raw string into a JSONArray
+                    // Parse the raw string into a JSONArray and format the display text
                     JSONArray dataArray = new JSONArray(rawjson);
-                    StringBuilder outputStr = new StringBuilder();
-
-                    // Iterate over each JSONObject in the array
-                    for (int i = 0; i < dataArray.length(); i++) {
-                        JSONObject item = dataArray.getJSONObject(i);
-
-                        // Retrieve each field
-                        String datestamp = item.getString("datestamp");
-                        int calorieCount = item.getInt("calorie_count");
-                        String description = item.getString("description");
-
-                        // Concatenate the fields to the output string
-                        outputStr.append(datestamp)
-                                .append(", ")
-                                .append(calorieCount)
-                                .append(", ")
-                                .append(description)
-                                .append("\n");
-                    }
-
-                    // Output the result
-                    storedCalories = outputStr.toString();
+                    storedCalories = formatCalorieEntries(dataArray);
 
                 } else {
                     // Handle non-200 HTTP response codes
@@ -231,6 +258,150 @@ public class MainActivity extends AppCompatActivity {
         // Method to get the userID
         private String getUserID() {
             return getOrCreateUserId();
+        }
+    }
+
+    private String formatCalorieEntries(JSONArray dataArray) throws JSONException {
+        Map<LocalDate, List<CalorieEntry>> entriesByDay = new LinkedHashMap<>();
+
+        for (int i = 0; i < dataArray.length(); i++) {
+            JSONObject item = dataArray.getJSONObject(i);
+            String rawDate = item.optString("datestamp", "");
+            String recordedAt = item.optString("recorded_at", rawDate);
+            int calorieCount = item.optInt("calorie_count");
+            String description = item.optString("description", "");
+
+            ParsedTimestamp parsedTimestamp = parseDatestamp(
+                    recordedAt != null && !recordedAt.trim().isEmpty() ? recordedAt : rawDate);
+
+            CalorieEntry entry = new CalorieEntry(parsedTimestamp, calorieCount, description);
+            entriesByDay
+                    .computeIfAbsent(parsedTimestamp.date, unused -> new ArrayList<>())
+                    .add(entry);
+        }
+
+        if (entriesByDay.isEmpty()) {
+            return "";
+        }
+
+        DateTimeFormatter dayFormatter =
+                DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy", Locale.getDefault());
+        DateTimeFormatter timeFormatter =
+                DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault());
+
+        StringBuilder output = new StringBuilder();
+
+        for (Map.Entry<LocalDate, List<CalorieEntry>> dailyEntry : entriesByDay.entrySet()) {
+            if (output.length() > 0) {
+                output.append("\n");
+            }
+            int dailyTotal = 0;
+            for (CalorieEntry entry : dailyEntry.getValue()) {
+                dailyTotal += entry.calories;
+            }
+
+            output.append(dayFormatter.format(dailyEntry.getKey()))
+                    .append(" — ")
+                    .append(dailyTotal)
+                    .append(" kcal")
+                    .append("\n");
+
+            for (CalorieEntry entry : dailyEntry.getValue()) {
+                output.append(" • ");
+                if (entry.timestamp.hasTime) {
+                    output.append(timeFormatter.format(entry.timestamp.dateTime));
+                } else {
+                    output.append(getString(R.string.time_not_available));
+                }
+                output.append(" — ")
+                        .append(entry.calories)
+                        .append(" kcal");
+                if (entry.description != null && !entry.description.trim().isEmpty()) {
+                    output.append(" — ").append(entry.description);
+                }
+                output.append("\n");
+            }
+        }
+
+        return output.toString().trim();
+    }
+
+    private ParsedTimestamp parseDatestamp(String datestamp) {
+        String value = datestamp != null ? datestamp.trim() : "";
+        if (value.isEmpty()) {
+            LocalDateTime now = LocalDateTime.now();
+            return new ParsedTimestamp(now.toLocalDate(), now, false);
+        }
+
+        for (DateTimeFormatter formatter : DATE_TIME_FORMATS) {
+            try {
+                LocalDateTime dateTime = LocalDateTime.parse(value, formatter);
+                return new ParsedTimestamp(dateTime.toLocalDate(), dateTime, true);
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+
+        try {
+            Instant instant = Instant.parse(value);
+            LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+            return new ParsedTimestamp(dateTime.toLocalDate(), dateTime, true);
+        } catch (DateTimeParseException ignored) {
+        }
+
+        for (DateTimeFormatter formatter : DATE_FORMATS) {
+            try {
+                LocalDate date = LocalDate.parse(value, formatter);
+                return new ParsedTimestamp(date, date.atStartOfDay(), false);
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+
+        if (value.matches("\\d{8}")) {
+            try {
+                LocalDate date = LocalDate.parse(value, DateTimeFormatter.BASIC_ISO_DATE);
+                return new ParsedTimestamp(date, date.atStartOfDay(), false);
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        return new ParsedTimestamp(now.toLocalDate(), now, false);
+    }
+
+    private static final DateTimeFormatter[] DATE_TIME_FORMATS = new DateTimeFormatter[]{
+            DateTimeFormatter.ISO_OFFSET_DATE_TIME,
+            DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+            DateTimeFormatter.ISO_DATE_TIME,
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+    };
+
+    private static final DateTimeFormatter[] DATE_FORMATS = new DateTimeFormatter[]{
+            DateTimeFormatter.ISO_LOCAL_DATE,
+            DateTimeFormatter.ofPattern("yyyy/MM/dd")
+    };
+
+    private static class ParsedTimestamp {
+        private final LocalDate date;
+        private final LocalDateTime dateTime;
+        private final boolean hasTime;
+
+        private ParsedTimestamp(LocalDate date, LocalDateTime dateTime, boolean hasTime) {
+            this.date = date;
+            this.dateTime = dateTime;
+            this.hasTime = hasTime;
+        }
+    }
+
+    private static class CalorieEntry {
+        private final ParsedTimestamp timestamp;
+        private final int calories;
+        private final String description;
+
+        private CalorieEntry(ParsedTimestamp timestamp, int calories, String description) {
+            this.timestamp = timestamp;
+            this.calories = calories;
+            this.description = description;
         }
     }
 

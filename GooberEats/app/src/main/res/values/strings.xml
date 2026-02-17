@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">GooberEats</string>
+    <string name="menu_user_id">User ID</string>
+    <string name="dialog_user_id_title">User ID Settings</string>
+    <string name="dialog_user_id_hint">user id</string>
+    <string name="dialog_user_id_save">Save</string>
+    <string name="dialog_user_id_cancel">Cancel</string>
+    <string name="dialog_user_id_random">Randomize</string>
+    <string name="time_not_available">time n/a</string>
 </resources>
