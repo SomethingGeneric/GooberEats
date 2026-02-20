@@ -4,9 +4,9 @@ annotated-types==0.7.0 \
     --hash=sha256:1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53 \
     --hash=sha256:aff07c09a53a08bc8cfccb9c85b05f1aa9a2a6f23728d790723543408344ce89
     # via pydantic
-anthropic==0.82.0 \
-    --hash=sha256:2525828b6798635a7a691c4c62d49bd10bbd288ab83fa4ba55851264dfa5377d \
-    --hash=sha256:e217340ba40cb9e24c88aacccc365334a6c3f46778855eca5000a6aa83d73dde
+anthropic==0.83.0 \
+    --hash=sha256:a8732c68b41869266c3034541a31a29d8be0f8cd0a714f9edce3128b351eceb4 \
+    --hash=sha256:f069ef508c73b8f9152e8850830d92bd5ef185645dbacf234bb213344a274810
     # via goobereats-backend
 anyio==4.12.1 \
     --hash=sha256:41cfcc3a4c85d3f05c932da7c26d0201ac36f72abd4435ba90d0464a3ffed703 \
