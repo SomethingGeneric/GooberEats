@@ -43,7 +43,7 @@ jobs:
           cache: gradle
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           api-level: 34
           build-tools: ${{ env.BUILD_TOOLS_VERSION }}
