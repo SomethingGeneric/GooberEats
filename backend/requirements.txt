@@ -399,9 +399,9 @@ openai==2.32.0 \
     --hash=sha256:4dcc9badeb4bf54ad0d187453742f290226d30150890b7890711bda4f32f192f \
     --hash=sha256:c54b27a9e4cb8d51f0dd94972ffd1a04437efeb259a9e60d8922b8bd26fe55e0
     # via goobereats-backend
-pydantic==2.13.1 \
-    --hash=sha256:9557ecc2806faaf6037f85b1fbd963d01e30511c48085f0d573650fdeaad378a \
-    --hash=sha256:a0f829b279ddd1e39291133fe2539d2aa46cc6b150c1706a270ff0879e3774d2
+pydantic==2.13.2 \
+    --hash=sha256:a525087f4c03d7e7456a3de89b64cd693d2229933bb1068b9af6befd5563694e \
+    --hash=sha256:b418196607e61081c3226dcd4f0672f2a194828abb9109e9cfb84026564df2d1
     # via
     #   anthropic
     #   openai
