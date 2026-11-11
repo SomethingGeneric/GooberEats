@@ -518,9 +518,9 @@ MarkupSafe==3.0.4 \
     #   flask
     #   jinja2
     #   werkzeug
-openai==3.46.0 \
-    --hash=sha256:7b650117e9bf539029bf880c2eff94a26f281394f6572284efa5d068d4b1c98e \
-    --hash=sha256:fb34cd8cab6809ad0aa8dc42493fa622aaa87c814fd8e67a6fb3fa1f1e5d952d
+openai==3.49.0 \
+    --hash=sha256:3977754792115027ba80ae16996ba3366478b5b228e1ab58e2660bd7ac8c3d78 \
+    --hash=sha256:44badf2bea9bcd643dafa0bc4d5a109a14395889219fd68b8560322288196e96
     # via goobereats-backend
 pydantic==2.14.3 \
     --hash=sha256:1054f237f4d4733e5a30e1e2333bd33a2004ab9ab1510bd053a9a31bb48e232d \
